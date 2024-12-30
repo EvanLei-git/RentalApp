@@ -8,11 +8,12 @@ import java.util.List;
 @Table(name = "landlords")
 public class Landlord extends User {
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by_id")
+    private Administrator verifiedBy;
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Property> properties = new ArrayList<>();
-
-    @OneToMany(mappedBy = "property.owner", cascade = CascadeType.ALL)
-    private List<RentalApplication> receivedApplications = new ArrayList<>();
 
     // Constructors
     public Landlord() {
@@ -32,11 +33,11 @@ public class Landlord extends User {
         this.properties = properties;
     }
 
-    public List<RentalApplication> getReceivedApplications() {
-        return receivedApplications;
+    public Administrator getVerifiedBy() {
+        return verifiedBy;
     }
 
-    public void setReceivedApplications(List<RentalApplication> receivedApplications) {
-        this.receivedApplications = receivedApplications;
+    public void setVerifiedBy(Administrator verifiedBy) {
+        this.verifiedBy = verifiedBy;
     }
 }

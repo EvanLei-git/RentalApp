@@ -1,15 +1,18 @@
 package gr.hua.dit.rentalapp.entities;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "tenants")
 public class Tenant extends User {
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by_id") // refering to the Administrator id that verified the tenant
+    private Administrator verifiedBy;
 
     @NotBlank
     private String employmentStatus;
@@ -78,5 +81,12 @@ public class Tenant extends User {
 
     public void setViewedProperties(List<Property> viewedProperties) {
         this.viewedProperties = viewedProperties;
+    }
+    public Administrator getVerifiedBy() {
+        return verifiedBy;
+    }
+
+    public void setVerifiedBy(Administrator verifiedBy) {
+        this.verifiedBy = verifiedBy;
     }
 }

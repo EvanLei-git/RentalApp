@@ -1,13 +1,9 @@
 package gr.hua.dit.rentalapp.entities;
 
-
 import jakarta.persistence.*;
 import java.util.Date;
 import gr.hua.dit.rentalapp.enums.ApplicationStatus;
 import jakarta.validation.constraints.NotNull;
-
-
-
 
 @Entity
 @Table(name = "rental_applications")
@@ -28,6 +24,8 @@ public class RentalApplication {
     @Enumerated(EnumType.STRING)
     @NotNull
     private ApplicationStatus status;
+
+
 
     @Temporal(TemporalType.DATE)
     private Date applicationDate;

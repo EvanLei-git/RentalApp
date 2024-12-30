@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController
-@RequestMapping("/users") // Προσθέτουμε βασικό URL prefix
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
@@ -19,22 +20,29 @@ public class UserController {
         this.userService = userService;
     }
 
-    // GET: Λήψη όλων των χρηστών
+    // GET all users (likely restricted to admins)
     @GetMapping
     public List<User> getAllUsers() {
         return userService.getAllUsers();
     }
 
-    // GET: Λήψη χρήστη με username
+    // GET user by ID or username
     @GetMapping("/{username}")
     public User getUserByUsername(@PathVariable String username) {
         return userService.getUserByUsername(username);
     }
 
-    // POST: Προσθήκη νέου χρήστη
-    @PostMapping("/add")
-    public ResponseEntity<String> addUser(@RequestBody User user) {
-        userService.saveUser(user);
-        return ResponseEntity.ok("User added successfully!");
+    // PUT: update user info (profile update, etc.)
+    @PutMapping("/{userId}")
+    public ResponseEntity<String> updateUser(@PathVariable Long userId, @RequestBody User updatedUser) {
+        userService.updateUser(userId, updatedUser);
+        return ResponseEntity.ok("User updated successfully!");
+    }
+
+    // DELETE: remove a user (admin only)
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.ok("User deleted successfully!");
     }
 }

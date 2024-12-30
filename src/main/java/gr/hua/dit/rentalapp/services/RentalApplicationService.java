@@ -1,82 +1,47 @@
 package gr.hua.dit.rentalapp.services;
 
 import gr.hua.dit.rentalapp.entities.RentalApplication;
-import gr.hua.dit.rentalapp.entities.Property;
-import gr.hua.dit.rentalapp.entities.Tenant;
 import gr.hua.dit.rentalapp.enums.ApplicationStatus;
 import gr.hua.dit.rentalapp.repositories.RentalApplicationRepository;
-import gr.hua.dit.rentalapp.repositories.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
 
 @Service
 public class RentalApplicationService {
 
+    private final RentalApplicationRepository applicationRepository;
 
     @Autowired
-    private RentalApplicationRepository rentalApplicationRepository;
+    public RentalApplicationService(RentalApplicationRepository applicationRepository) {
+        this.applicationRepository = applicationRepository;
+    }
 
-    @Autowired
-    private PropertyRepository propertyRepository;
+    public List<RentalApplication> getAllApplications() {
+        return applicationRepository.findAll();
+    }
 
-    @Transactional
-    public RentalApplication submitApplication(Tenant applicant, Long propertyId) {
-        Property property = propertyRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
+    public RentalApplication getApplicationById(Long id) {
+        return applicationRepository.findById(id).orElse(null);
+    }
 
-        if (!property.isApproved()) {
-            throw new RuntimeException("Cannot apply for unapproved property");
+    public RentalApplication createApplication(RentalApplication application) {
+        // set status to PENDING, set date, etc.
+        // application.setStatus(ApplicationStatus.PENDING); // todo: might have to move it to the constructor
+        return applicationRepository.save(application);
+    }
+
+    public void updateApplicationStatus(Long id, ApplicationStatus status) {
+        RentalApplication existing = applicationRepository.findById(id).orElse(null);
+        if (existing == null) {
+            throw new RuntimeException("Application not found: " + id);
         }
-
-        RentalApplication application = new RentalApplication();
-        application.setApplicant(applicant);
-        application.setProperty(property);
-        application.setApplicationDate(new Date());
-        application.setStatus(ApplicationStatus.PENDING);
-
-        return rentalApplicationRepository.save(application);
+        existing.setStatus(status);
+        applicationRepository.save(existing);
     }
 
-    @Transactional
-    public RentalApplication updateApplicationStatus(Long applicationId, ApplicationStatus newStatus) {
-        RentalApplication application = rentalApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found"));
-        
-        application.setStatus(newStatus);
-        return rentalApplicationRepository.save(application);
-    }
-
-    public List<RentalApplication> getApplicationsByTenant(Long tenantId) {
-        return rentalApplicationRepository.findByApplicantId(tenantId);
-    }
-
-    public List<RentalApplication> getApplicationsByProperty(Long propertyId) {
-        return rentalApplicationRepository.findByPropertyId(propertyId);
-    }
-
-    public List<RentalApplication> getPendingApplications() {
-        return rentalApplicationRepository.findByStatus(ApplicationStatus.PENDING);
-    }
-
-    public List<RentalApplication> getTenantApplicationsByStatus(Long tenantId, ApplicationStatus status) {
-        return rentalApplicationRepository.findByApplicantIdAndStatus(tenantId, status);
-    }
-
-    public List<RentalApplication> getPropertyApplicationsByStatus(Long propertyId, ApplicationStatus status) {
-        return rentalApplicationRepository.findByPropertyIdAndStatus(propertyId, status);
-    }
-
-    public RentalApplication getApplication(Long applicationId) {
-        return rentalApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found"));
-    }
-
-    @Transactional
-    public void deleteApplication(Long applicationId) {
-        rentalApplicationRepository.deleteById(applicationId);
+    public void deleteApplication(Long id) {
+        applicationRepository.deleteById(id);
     }
 }

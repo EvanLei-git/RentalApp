@@ -9,9 +9,20 @@ import java.util.List;
 
 @Repository
 public interface RentalApplicationRepository extends JpaRepository<RentalApplication, Long> {
-    List<RentalApplication> findByApplicantId(Long applicantId);
-    List<RentalApplication> findByPropertyId(Long propertyId);
+
+    // 'applicant' is of type Tenant, which has 'userId'
+    List<RentalApplication> findByApplicantUserId(Long tenantId);
+
+    // 'property' is of type Property, which has 'propertyId'
+    List<RentalApplication> findByPropertyPropertyId(Long propertyId);
+
+    // This works because 'status' is an enum field on RentalApplication
     List<RentalApplication> findByStatus(ApplicationStatus status);
-    List<RentalApplication> findByApplicantIdAndStatus(Long applicantId, ApplicationStatus status);
-    List<RentalApplication> findByPropertyIdAndStatus(Long propertyId, ApplicationStatus status);
+
+    List<RentalApplication> findByApplicantUserIdAndStatus(Long tenantId, ApplicationStatus status);
+
+    List<RentalApplication> findByPropertyPropertyIdAndStatus(Long propertyId, ApplicationStatus status);
+
+
 }
+

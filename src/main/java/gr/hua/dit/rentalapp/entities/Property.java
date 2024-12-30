@@ -1,14 +1,11 @@
 package gr.hua.dit.rentalapp.entities;
 
-import jakarta.persistence.*;
-import java.util.List;
-
 import gr.hua.dit.rentalapp.enums.PropertyType;
-
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "properties")
@@ -19,8 +16,12 @@ public class Property {
     private Long propertyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @JoinColumn(name = "landlord_id", nullable = false)
     private Landlord owner;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by_id")
+    private Administrator verifiedBy;
 
     @NotBlank
     private String address;
@@ -46,16 +47,17 @@ public class Property {
 
     // Constructors
     public Property() {
+        this.isApproved = false; // Default value
     }
 
     public Property(Landlord owner, String address, PropertyType type, double rentAmount, int bedrooms, int bathrooms) {
+        this();
         this.owner = owner;
         this.address = address;
         this.type = type;
         this.rentAmount = rentAmount;
         this.bedrooms = bedrooms;
         this.bathrooms = bathrooms;
-        this.isApproved = false; // Default value
     }
 
     // Getters and Setters
@@ -129,5 +131,12 @@ public class Property {
 
     public void setAmenities(List<String> amenities) {
         this.amenities = amenities;
+    }
+    public Administrator getVerifiedBy() {
+        return verifiedBy;
+    }
+
+    public void setVerifiedBy(Administrator verifiedBy) {
+        this.verifiedBy = verifiedBy;
     }
 }

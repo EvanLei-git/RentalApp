@@ -5,17 +5,20 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Entity
 @Table(name = "administrators")
 public class Administrator extends User {
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "pending_property_id")
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "verifiedBy")
     private List<Property> pendingProperties = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "unverified_tenant_id")
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "verifiedBy")
     private List<Tenant> unverifiedTenants = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "verifiedBy")
+    private List<Landlord> unverifiedLandlords = new ArrayList<>();
 
     // Constructors
     public Administrator() {
@@ -27,6 +30,7 @@ public class Administrator extends User {
     }
 
     // Getters and Setters
+
     public List<Property> getPendingProperties() {
         return pendingProperties;
     }
