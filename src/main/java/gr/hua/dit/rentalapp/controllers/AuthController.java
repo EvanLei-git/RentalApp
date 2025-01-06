@@ -28,8 +28,8 @@ public class AuthController {
     @PostConstruct
     public void setupDefaultRoles() {
         // Administrator
-        if (roleRepository.findByName(RoleType.ADMIN) == null) {
-            roleRepository.save(new Role(RoleType.ADMIN));
+        if (roleRepository.findByName(RoleType.ADMINISTRATOR) == null) {
+            roleRepository.save(new Role(RoleType.ADMINISTRATOR));
         }
         // Landlord
         if (roleRepository.findByName(RoleType.LANDLORD) == null) {

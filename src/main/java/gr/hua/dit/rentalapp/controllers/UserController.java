@@ -29,7 +29,7 @@ public class UserController {
     // GET user by ID or username
     @GetMapping("/{username}")
     public User getUserByUsername(@PathVariable String username) {
-        return userService.getUserByUsername(username);
+        return userService.findByUsername(username);
     }
 
     // PUT: update user info (profile update, etc.)

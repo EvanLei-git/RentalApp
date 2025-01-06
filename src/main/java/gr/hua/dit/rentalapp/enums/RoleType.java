@@ -1,7 +1,7 @@
 package gr.hua.dit.rentalapp.enums;
 
 public enum RoleType{
-    ADMIN,
+    ADMINISTRATOR,
     LANDLORD,
     TENANT
 }
