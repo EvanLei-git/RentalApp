@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -97,7 +99,7 @@ public class AuthService {
      * Login: Validate credentials and return a token (JWT or session).
      * For now, we'll just do a minimal password check and return a dummy token.
      */
-    public String login(String username, String rawPassword) {
+    public Map<String, String> login(String username, String rawPassword) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isEmpty()) {
             throw new RuntimeException("Invalid username or password.");
@@ -108,8 +110,19 @@ public class AuthService {
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new RuntimeException("Invalid username or password.");
         }
-        // TODO: Generate a JWT or session
-        return "jwt-dummy-token-for-" + username;
+
+        Map<String, String> response = new HashMap<>();
+        response.put("token", "jwt-dummy-token-for-" + username);
+        
+        // Get the user's role
+        String userRole = user.getRoles().stream()
+                .findFirst()
+                .map(r -> r.getName().toString())
+                .orElse("TENANT"); // Default role
+                
+        response.put("role", userRole);
+        
+        return response;
     }
 
     /**

@@ -78,11 +78,12 @@ public class AuthController {
             }
 
             // AuthService logic
-            String token = authService.login(username, password);
+            Map<String, String> authResponse = authService.login(username, password);
 
             // Create response with token and redirect URL
             Map<String, String> response = new HashMap<>();
-            response.put("token", token);
+            response.put("token", authResponse.get("token"));
+            response.put("role", authResponse.get("role"));
             response.put("redirect", "/home.html");
 
             return ResponseEntity.ok(response);

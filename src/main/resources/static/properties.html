@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Properties - RentalApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .property-card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .property-card:hover {
+            transform: translateY(-5px);
+        }
+        .amenity-badge {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .property-image {
+            height: 200px;
+            object-fit: cover;
+            width: 100%;
+        }
+        .filters {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/home.html">RentalApp</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/properties.html">Browse Properties</a>
+                    </li>
+                    <li class="nav-item landlord-only" style="display: none;">
+                        <a class="nav-link" href="/property-management.html">Manage Properties</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard" onclick="return checkAuth(event)">Dashboard</a>
+                    </li>
+                </ul>
+                <div id="authButtons">
+                    <a href="/login.html" class="btn btn-outline-light">Login</a>
+                    <a href="/register.html" class="btn btn-light ms-2">Register</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="mb-4">Available Properties</h2>
+        
+        <div class="filters">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="propertyType" class="form-label">Property Type</label>
+                    <select class="form-select" id="propertyType">
+                        <option value="">All Types</option>
+                        <option value="APARTMENT">Apartment</option>
+                        <option value="HOUSE">House</option>
+                        <option value="STUDIO">Studio</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="minPrice" class="form-label">Min Price (€)</label>
+                    <input type="number" class="form-control" id="minPrice" min="0">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="maxPrice" class="form-label">Max Price (€)</label>
+                    <input type="number" class="form-control" id="maxPrice" min="0">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="bedrooms" class="form-label">Bedrooms</label>
+                    <select class="form-select" id="bedrooms">
+                        <option value="">Any</option>
+                        <option value="1">1+</option>
+                        <option value="2">2+</option>
+                        <option value="3">3+</option>
+                        <option value="4">4+</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+                    <button class="btn btn-outline-secondary" onclick="resetFilters()">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="propertiesList" class="row">
+            <!-- Properties will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Property Details Modal -->
+    <div class="modal fade" id="propertyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Property Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="propertyModalContent">
+                    <!-- Property details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="requestViewing()" id="viewingButton">Request Viewing</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentProperties = [];
+        const propertyModal = new bootstrap.Modal(document.getElementById('propertyModal'));
+        let selectedPropertyId = null;
+
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            const authButtons = document.getElementById('authButtons');
+            const landlordElements = document.querySelectorAll('.landlord-only');
+            
+            if (token) {
+                // User is logged in
+                authButtons.innerHTML = '<button onclick="logout()" class="btn btn-outline-light">Logout</button>';
+                
+                // Check if user is a landlord
+                const userRole = localStorage.getItem('userRole');
+                if (userRole === 'LANDLORD') {
+                    landlordElements.forEach(el => el.style.display = '');
+                }
+            }
+
+            loadProperties();
+        });
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole');
+            window.location.href = '/login.html';
+        }
+
+        function checkAuth(event) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                event.preventDefault();
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        }
+
+        async function loadProperties() {
+            try {
+                const response = await fetch('/api/properties');
+                if (!response.ok) {
+                    throw new Error('Failed to load properties');
+                }
+
+                currentProperties = await response.json();
+                displayProperties(currentProperties);
+
+            } catch (error) {
+                console.error('Error loading properties:', error);
+                const propertiesList = document.getElementById('propertiesList');
+                propertiesList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load properties</div></div>';
+            }
+        }
+
+        function displayProperties(properties) {
+            const propertiesList = document.getElementById('propertiesList');
+            propertiesList.innerHTML = '';
+
+            if (properties.length === 0) {
+                propertiesList.innerHTML = '<div class="col-12"><div class="alert alert-info">No properties found matching your criteria</div></div>';
+                return;
+            }
+
+            properties.forEach(property => {
+                if (!property.approved) return; // Only show approved properties
+
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4';
+                card.innerHTML = `
+                    <div class="card property-card">
+                        <img src="https://via.placeholder.com/400x200?text=Property+Image" class="property-image" alt="Property">
+                        <div class="card-body">
+                            <h5 class="card-title">${property.address}</h5>
+                            <p class="card-text">
+                                <strong>Type:</strong> ${property.type}<br>
+                                <strong>Rent:</strong> €${property.rentAmount}/month<br>
+                                <strong>Bedrooms:</strong> ${property.bedrooms} | 
+                                <strong>Bathrooms:</strong> ${property.bathrooms}
+                            </p>
+                            <div class="mb-3">
+                                ${property.amenities.map(amenity => 
+                                    `<span class="badge bg-secondary amenity-badge">${amenity}</span>`
+                                ).join('')}
+                            </div>
+                            <button class="btn btn-primary" onclick="showPropertyDetails(${property.propertyId})">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+                propertiesList.appendChild(card);
+            });
+        }
+
+        function showPropertyDetails(propertyId) {
+            const property = currentProperties.find(p => p.propertyId === propertyId);
+            if (!property) return;
+
+            selectedPropertyId = propertyId;
+            const modalContent = document.getElementById('propertyModalContent');
+            
+            modalContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <img src="https://via.placeholder.com/400x300?text=Property+Image" class="img-fluid" alt="Property">
+                    </div>
+                    <div class="col-md-6">
+                        <h4>${property.address}</h4>
+                        <p><strong>Type:</strong> ${property.type}</p>
+                        <p><strong>Rent:</strong> €${property.rentAmount}/month</p>
+                        <p><strong>Bedrooms:</strong> ${property.bedrooms}</p>
+                        <p><strong>Bathrooms:</strong> ${property.bathrooms}</p>
+                        <h5>Amenities:</h5>
+                        <div>
+                            ${property.amenities.map(amenity => 
+                                `<span class="badge bg-secondary amenity-badge">${amenity}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Show/hide viewing button based on authentication
+            const viewingButton = document.getElementById('viewingButton');
+            viewingButton.style.display = localStorage.getItem('token') ? '' : 'none';
+
+            propertyModal.show();
+        }
+
+        async function requestViewing() {
+            if (!selectedPropertyId) return;
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/viewings/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        propertyId: selectedPropertyId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to request viewing');
+                }
+
+                alert('Viewing request sent successfully!');
+                propertyModal.hide();
+
+            } catch (error) {
+                console.error('Error requesting viewing:', error);
+                alert('Failed to request viewing. Please try again later.');
+            }
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('propertyType').value;
+            const minPrice = document.getElementById('minPrice').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+            const bedrooms = document.getElementById('bedrooms').value;
+
+            let filteredProperties = currentProperties;
+
+            if (type) {
+                filteredProperties = filteredProperties.filter(p => p.type === type);
+            }
+            if (minPrice) {
+                filteredProperties = filteredProperties.filter(p => p.rentAmount >= minPrice);
+            }
+            if (maxPrice) {
+                filteredProperties = filteredProperties.filter(p => p.rentAmount <= maxPrice);
+            }
+            if (bedrooms) {
+                filteredProperties = filteredProperties.filter(p => p.bedrooms >= parseInt(bedrooms));
+            }
+
+            displayProperties(filteredProperties);
+        }
+
+        function resetFilters() {
+            document.getElementById('propertyType').value = '';
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            document.getElementById('bedrooms').value = '';
+            displayProperties(currentProperties);
+        }
+    </script>
+</body>
+</html>
