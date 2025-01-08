@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Entity
@@ -89,4 +90,5 @@ public abstract class User {
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
+
 }

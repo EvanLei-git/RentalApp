@@ -59,7 +59,7 @@ public class RegisterController {
             user.setPassword(password);
 
             // Save user with role
-            userService.saveUser(user, role);
+            userService.saveUser(user);
 
             redirectAttributes.addFlashAttribute("success", "Registration successful! Please login.");
             return "redirect:/login";

@@ -5,12 +5,14 @@ import gr.hua.dit.rentalapp.entities.User;
 import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.repositories.RoleRepository;
 import gr.hua.dit.rentalapp.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -35,28 +37,24 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
-    public User findByUsername(String username) {
+    public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
-    public User saveUser(User user, String roleStr) {
-        // Encode password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // Set role
-        RoleType roleType = RoleType.valueOf(roleStr.toUpperCase());
-        Role role = roleRepository.findByName(roleType);
-        if (role == null) {
-            // Create role if it doesn't exist
-            role = new Role(roleType);
-            role = roleRepository.save(role);
-        }
-        
+    @Transactional
+    public Long saveUser(User user) {
+        String passwd= user.getPassword();
+        String encodedPassword = passwordEncoder.encode(passwd);
+        user.setPassword(encodedPassword);
+
+        Role role = roleRepository.findByName(RoleType.valueOf("TENANT"))
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         user.setRoles(roles);
-        
-        return userRepository.save(user);
+
+        user = userRepository.save(user);
+        return user.getUserId();
     }
 
     public void updateUser(Long userId, User updatedUser) {

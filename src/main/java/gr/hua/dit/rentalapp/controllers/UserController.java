@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @RestController
@@ -28,7 +29,7 @@ public class UserController {
 
     // GET user by ID or username
     @GetMapping("/{username}")
-    public User getUserByUsername(@PathVariable String username) {
+    public Optional<User> getUserByUsername(@PathVariable String username) {
         return userService.findByUsername(username);
     }
 

@@ -5,9 +5,12 @@ import gr.hua.dit.rentalapp.enums.RoleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface RoleRepository extends JpaRepository<Role, Long> {
-    Role findByName(RoleType name);
+public interface RoleRepository extends JpaRepository<Role, Integer> {
+
+    Optional<Role> findByName(RoleType roleName);
 
     default Role updateOrInsert(Role role) {
         Role existing_role = findByName(role.getName()).orElse(null);

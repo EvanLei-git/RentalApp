@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class AuthService {
 
@@ -33,23 +35,22 @@ public class AuthService {
         // Encrypt password
         String encodedPassword = passwordEncoder.encode(rawPassword);
 
-        // Create a basic User or a specific subclass (Tenant, Landlord, Administrator)
-        // For simplicity, let's just do a "User" here. 
-        // If you have separate methods to create Tenant/Landlord/Administrator, call them instead.
-        User user = new User(username, email, encodedPassword) {
+        // Create a basic User
+        User user = new User(username, email, encodedPassword){};
 
-        };
-
-        // Find or create the role
+        // Find the role by its name
         RoleType roleType = RoleType.valueOf(roleString); // e.g., "ROLE_TENANT"
-        Role role = roleRepository.findByName(roleType);
-        if (role == null) {
+        Optional<Role> roleOptional = roleRepository.findByName(roleType);
+
+        if (roleOptional.isEmpty()) {
             throw new RuntimeException("Role not found: " + roleString);
         }
-        
+
+        // Unwrap the role and add it to the user's roles
+        Role role = roleOptional.get();
         user.getRoles().add(role);
 
-        // Save user
+        // Save the user
         userRepository.save(user);
     }
 
@@ -58,12 +59,12 @@ public class AuthService {
      * For now, we'll just do a minimal password check and return a dummy token.
      */
     public String login(String username, String rawPassword) {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
+        Optional<User> user = userRepository.findByUsername(username);
+        if (user.isEmpty()) {
             throw new RuntimeException("Invalid username or password.");
         }
         // Check password
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+        if (!passwordEncoder.matches(rawPassword, user.get().getPassword())) {
             throw new RuntimeException("Invalid username or password.");
         }
         // TODO: Generate a JWT or session
