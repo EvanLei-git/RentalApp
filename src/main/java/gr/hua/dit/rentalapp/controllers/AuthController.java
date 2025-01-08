@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,15 +30,15 @@ public class AuthController {
     @PostConstruct
     public void setupDefaultRoles() {
         // Administrator
-        if (roleRepository.findByName(RoleType.ADMINISTRATOR) == null) {
+        if (roleRepository.findByName(RoleType.ADMINISTRATOR).isEmpty()) {
             roleRepository.save(new Role(RoleType.ADMINISTRATOR));
         }
         // Landlord
-        if (roleRepository.findByName(RoleType.LANDLORD) == null) {
+        if (roleRepository.findByName(RoleType.LANDLORD).isEmpty()) {
             roleRepository.save(new Role(RoleType.LANDLORD));
         }
         // Tenant
-        if (roleRepository.findByName(RoleType.TENANT) == null) {
+        if (roleRepository.findByName(RoleType.TENANT).isEmpty()) {
             roleRepository.save(new Role(RoleType.TENANT));
         }
     }
@@ -44,31 +46,49 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody Map<String, String> requestData) {
-        // requestData might contain "username", "email", "password", "role"
-        // Example usage:
-        String username = requestData.get("username");
-        String email = requestData.get("email");
-        String password = requestData.get("password");
-        String role = requestData.get("role");
+        try {
+            String username = requestData.get("username");
+            String email = requestData.get("email");
+            String password = requestData.get("password");
+            String role = requestData.get("role");
 
-        // Pass these to your AuthService method
-        authService.register(username, email, password, role);
+            // Validate required fields
+            if (username == null || email == null || password == null || role == null) {
+                return ResponseEntity.badRequest().body("All fields are required");
+            }
 
-        return ResponseEntity.ok("User registered successfully!");
+            // Register the user
+            authService.register(username, email, password, role);
+            return ResponseEntity.ok("User registered successfully!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> credentials) {
-        // credentials might have "username" and "password"
-        String username = credentials.get("username");
-        String password = credentials.get("password");
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        try {
+            String username = credentials.get("username");
+            String password = credentials.get("password");
 
-        // AuthService logic
-        String token = authService.login(username, password);
+            // Validate required fields
+            if (username == null || password == null) {
+                return ResponseEntity.badRequest().body("Username and password are required");
+            }
 
-        // Return the token (for example) in the response
-        return ResponseEntity.ok("Bearer " + token);
+            // AuthService logic
+            String token = authService.login(username, password);
+
+            // Create response with token and redirect URL
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+            response.put("redirect", "/home.html");
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
 

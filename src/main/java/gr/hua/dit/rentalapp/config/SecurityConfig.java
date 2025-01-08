@@ -33,18 +33,24 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**", "/register/**").permitAll()
+                // Public endpoints
+                .requestMatchers("/", "/home.html", "/login.html", "/register.html").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/static/**").permitAll()
+                // Protected endpoints
+                .requestMatchers("/dashboard/**", "/api/properties/**", "/api/users/**").authenticated()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/authenticate")
-                .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error=true")
+                .loginPage("/login.html")
+                .loginProcessingUrl("/api/auth/login")
+                .defaultSuccessUrl("/home.html", true)
+                .failureUrl("/login.html?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutUrl("/api/auth/logout")
+                .logoutSuccessUrl("/home.html")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()

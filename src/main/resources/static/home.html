@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentalApp - Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        .welcome-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .nav-bar {
+            background-color: #2563eb;
+            padding: 10px 0;
+        }
+        .nav-bar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        .nav-bar ul li {
+            margin: 0 15px;
+        }
+        .nav-bar ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-bar ul li a:hover {
+            text-decoration: underline;
+        }
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background-color: #b91c1c;
+        }
+        .auth-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .auth-btn:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <a href="/login.html" class="auth-btn">Login</a>
+    
+    <div class="header">
+        <h1>Welcome to RentalApp</h1>
+    </div>
+    
+    <div class="nav-bar">
+        <ul>
+            <li><a href="/home.html">Home</a></li>
+            <li><a href="/properties">Properties</a></li>
+            <li><a href="/dashboard" onclick="return checkAuth(event)">Dashboard</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h2>Welcome to RentalApp!</h2>
+            <p>Find your perfect rental property or manage your existing properties.</p>
+            <p>Browse available properties or <a href="/login.html">login</a> to access your dashboard.</p>
+        </div>
+    </div>
+
+    <script>
+        function checkAuth(event) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                event.preventDefault();
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

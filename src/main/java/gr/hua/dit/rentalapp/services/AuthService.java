@@ -1,8 +1,8 @@
 package gr.hua.dit.rentalapp.services;
 
+import gr.hua.dit.rentalapp.entities.Role;
 import gr.hua.dit.rentalapp.entities.User;
 import gr.hua.dit.rentalapp.enums.RoleType;
-import gr.hua.dit.rentalapp.entities.Role;
 import gr.hua.dit.rentalapp.repositories.RoleRepository;
 import gr.hua.dit.rentalapp.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,26 +32,65 @@ public class AuthService {
 
      */
     public void register(String username, String email, String rawPassword, String roleString) {
-        // Encrypt password
-        String encodedPassword = passwordEncoder.encode(rawPassword);
-
-        // Create a basic User
-        User user = new User(username, email, encodedPassword){};
-
-        // Find the role by its name
-        RoleType roleType = RoleType.valueOf(roleString); // e.g., "ROLE_TENANT"
-        Optional<Role> roleOptional = roleRepository.findByName(roleType);
-
-        if (roleOptional.isEmpty()) {
-            throw new RuntimeException("Role not found: " + roleString);
+        System.out.println("Attempting to register user: " + username + " with role: " + roleString);
+        
+        // Validate inputs
+        if (username == null || username.trim().isEmpty()) {
+            throw new RuntimeException("Username is required");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Email is required");
+        }
+        if (rawPassword == null || rawPassword.trim().isEmpty()) {
+            throw new RuntimeException("Password is required");
+        }
+        if (roleString == null || roleString.trim().isEmpty()) {
+            throw new RuntimeException("Role is required");
         }
 
-        // Unwrap the role and add it to the user's roles
-        Role role = roleOptional.get();
-        user.getRoles().add(role);
+        // Check if username already exists
+        if (userRepository.existsByUsername(username)) {
+            System.out.println("Username already exists: " + username);
+            throw new RuntimeException("Username already exists");
+        }
 
-        // Save the user
-        userRepository.save(user);
+        // Check if email already exists
+        if (userRepository.existsByEmail(email)) {
+            System.out.println("Email already exists: " + email);
+            throw new RuntimeException("Email already exists");
+        }
+
+        try {
+            // Encrypt password
+            String encodedPassword = passwordEncoder.encode(rawPassword);
+
+            // Create a new User instance
+            User user = new User(username, email, encodedPassword);
+
+            // Find the role by its name
+            RoleType roleType = RoleType.valueOf(roleString.toUpperCase());
+            Optional<Role> roleOptional = roleRepository.findByName(roleType);
+
+            if (roleOptional.isEmpty()) {
+                System.out.println("Role not found: " + roleString);
+                throw new RuntimeException("Role not found: " + roleString);
+            }
+
+            // Unwrap the role and add it to the user's roles
+            Role role = roleOptional.get();
+            user.getRoles().add(role);
+
+            // Save the user
+            userRepository.save(user);
+            System.out.println("Successfully registered user: " + username);
+            
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid role type: " + roleString);
+            throw new RuntimeException("Invalid role type: " + roleString);
+        } catch (Exception e) {
+            System.out.println("Error registering user: " + e.getMessage());
+            throw new RuntimeException("Error registering user: " + e.getMessage());
+        }
     }
 
     /**
@@ -59,12 +98,14 @@ public class AuthService {
      * For now, we'll just do a minimal password check and return a dummy token.
      */
     public String login(String username, String rawPassword) {
-        Optional<User> user = userRepository.findByUsername(username);
-        if (user.isEmpty()) {
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
             throw new RuntimeException("Invalid username or password.");
         }
+        
+        User user = userOpt.get();
         // Check password
-        if (!passwordEncoder.matches(rawPassword, user.get().getPassword())) {
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new RuntimeException("Invalid username or password.");
         }
         // TODO: Generate a JWT or session
