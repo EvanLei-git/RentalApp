@@ -1,4 +1,5 @@
 package gr.hua.dit.rentalapp.repositories;
+
 import gr.hua.dit.rentalapp.entities.Role;
 
 import gr.hua.dit.rentalapp.enums.RoleType;
@@ -13,14 +14,12 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
     Optional<Role> findByName(RoleType roleName);
 
     default Role updateOrInsert(Role role) {
-        Role existing_role = findByName(role.getName()).orElse(null);
-        if (existing_role != null) {
-            return existing_role;
+        Optional<Role> existingRole = findByName(role.getName());
+        if (existingRole.isPresent()) {
+            return existingRole.get();
         }
         else {
             return save(role);
         }
     }
 }
-
-

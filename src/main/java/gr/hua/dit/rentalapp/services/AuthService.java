@@ -1,7 +1,6 @@
 package gr.hua.dit.rentalapp.services;
 
-import gr.hua.dit.rentalapp.entities.Role;
-import gr.hua.dit.rentalapp.entities.User;
+import gr.hua.dit.rentalapp.entities.*;
 import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.repositories.RoleRepository;
 import gr.hua.dit.rentalapp.repositories.UserRepository;
@@ -31,9 +30,8 @@ public class AuthService {
 
     /**
      * Register a new user with the given credentials and role name.
-
      */
-    public void register(String username, String email, String rawPassword, String roleString) {
+    public void register(String username, String email, String rawPassword, String firstName, String lastName, String roleString) {
         System.out.println("Attempting to register user: " + username + " with role: " + roleString);
         
         // Validate inputs
@@ -46,6 +44,12 @@ public class AuthService {
         if (rawPassword == null || rawPassword.trim().isEmpty()) {
             throw new RuntimeException("Password is required");
         }
+        if (firstName == null || firstName.trim().isEmpty()) {
+            throw new RuntimeException("First name is required");
+        }
+        if (lastName == null || lastName.trim().isEmpty()) {
+            throw new RuntimeException("Last name is required");
+        }
         if (roleString == null || roleString.trim().isEmpty()) {
             throw new RuntimeException("Role is required");
         }
@@ -56,43 +60,48 @@ public class AuthService {
             throw new RuntimeException("Username already exists");
         }
 
-        // Check if email already exists
-        if (userRepository.existsByEmail(email)) {
-            System.out.println("Email already exists: " + email);
-            throw new RuntimeException("Email already exists");
+        // Create appropriate user type based on role
+        User user;
+        switch (roleString.toUpperCase()) {
+            case "TENANT":
+                Tenant tenant = new Tenant();
+                tenant.setUsername(username);
+                tenant.setEmail(email);
+                tenant.setPassword(passwordEncoder.encode(rawPassword));
+                tenant.setEmploymentStatus("Not Specified"); // Default value
+                tenant.setMonthlyIncome(0.0); // Default value
+                user = tenant;
+                break;
+            case "LANDLORD":
+                Landlord landlord = new Landlord();
+                landlord.setUsername(username);
+                landlord.setEmail(email);
+                landlord.setPassword(passwordEncoder.encode(rawPassword));
+                user = landlord;
+                break;
+            case "ADMINISTRATOR":
+                Administrator admin = new Administrator();
+                admin.setUsername(username);
+                admin.setEmail(email);
+                admin.setPassword(passwordEncoder.encode(rawPassword));
+                user = admin;
+                break;
+            default:
+                throw new RuntimeException("Invalid role: " + roleString);
         }
 
-        try {
-            // Encrypt password
-            String encodedPassword = passwordEncoder.encode(rawPassword);
+        // Set first and last name
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
 
-            // Create a new User instance
-            User user = new User(username, email, encodedPassword);
+        // Find and set role
+        Role role = roleRepository.findByName(RoleType.valueOf(roleString.toUpperCase()))
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleString));
+        user.getRoles().add(role);
 
-            // Find the role by its name
-            RoleType roleType = RoleType.valueOf(roleString.toUpperCase());
-            Optional<Role> roleOptional = roleRepository.findByName(roleType);
-
-            if (roleOptional.isEmpty()) {
-                System.out.println("Role not found: " + roleString);
-                throw new RuntimeException("Role not found: " + roleString);
-            }
-
-            // Unwrap the role and add it to the user's roles
-            Role role = roleOptional.get();
-            user.getRoles().add(role);
-
-            // Save the user
-            userRepository.save(user);
-            System.out.println("Successfully registered user: " + username);
-            
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid role type: " + roleString);
-            throw new RuntimeException("Invalid role type: " + roleString);
-        } catch (Exception e) {
-            System.out.println("Error registering user: " + e.getMessage());
-            throw new RuntimeException("Error registering user: " + e.getMessage());
-        }
+        // Save user
+        userRepository.save(user);
+        System.out.println("Successfully registered user: " + username);
     }
 
     /**

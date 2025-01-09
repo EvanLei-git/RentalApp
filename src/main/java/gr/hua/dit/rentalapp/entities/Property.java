@@ -41,9 +41,32 @@ public class Property {
 
     private boolean isApproved;
 
-    @ElementCollection
-    @CollectionTable(name = "property_amenities", joinColumns = @JoinColumn(name = "property_id"))
-    private List<String> amenities = new ArrayList<>();
+    @NotBlank
+    private String country;
+
+    @NotBlank
+    private String city;
+
+    @NotBlank
+    private String postalCode;
+
+    @NotBlank
+    private String description;
+
+    @NotNull
+    private double sizeInSquareMeters;
+
+    @NotNull
+    private boolean hasParking;
+
+    @NotNull
+    private boolean allowsPets;
+
+    @NotNull
+    private boolean hasGarden;
+
+    @NotNull
+    private boolean hasBalcony;
 
     // Constructors
     public Property() {
@@ -125,13 +148,78 @@ public class Property {
         isApproved = approved;
     }
 
-    public List<String> getAmenities() {
-        return amenities;
+    public String getCountry() {
+        return country;
     }
 
-    public void setAmenities(List<String> amenities) {
-        this.amenities = amenities;
+    public void setCountry(String country) {
+        this.country = country;
     }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getSizeInSquareMeters() {
+        return sizeInSquareMeters;
+    }
+
+    public void setSizeInSquareMeters(double sizeInSquareMeters) {
+        this.sizeInSquareMeters = sizeInSquareMeters;
+    }
+
+    public boolean isHasParking() {
+        return hasParking;
+    }
+
+    public void setHasParking(boolean hasParking) {
+        this.hasParking = hasParking;
+    }
+
+    public boolean isAllowsPets() {
+        return allowsPets;
+    }
+
+    public void setAllowsPets(boolean allowsPets) {
+        this.allowsPets = allowsPets;
+    }
+
+    public boolean isHasGarden() {
+        return hasGarden;
+    }
+
+    public void setHasGarden(boolean hasGarden) {
+        this.hasGarden = hasGarden;
+    }
+
+    public boolean isHasBalcony() {
+        return hasBalcony;
+    }
+
+    public void setHasBalcony(boolean hasBalcony) {
+        this.hasBalcony = hasBalcony;
+    }
+
     public Administrator getVerifiedBy() {
         return verifiedBy;
     }

@@ -40,8 +40,15 @@ public class PropertyService {
         existing.setBedrooms(updatedProperty.getBedrooms());
         existing.setBathrooms(updatedProperty.getBathrooms());
         existing.setApproved(updatedProperty.isApproved());
-        existing.setAmenities(updatedProperty.getAmenities());
-        // i dont remember anything else
+        existing.setCountry(updatedProperty.getCountry());
+        existing.setCity(updatedProperty.getCity());
+        existing.setPostalCode(updatedProperty.getPostalCode());
+        existing.setDescription(updatedProperty.getDescription());
+        existing.setSizeInSquareMeters(updatedProperty.getSizeInSquareMeters());
+        existing.setHasParking(updatedProperty.isHasParking());
+        existing.setAllowsPets(updatedProperty.isAllowsPets());
+        existing.setHasGarden(updatedProperty.isHasGarden());
+        existing.setHasBalcony(updatedProperty.isHasBalcony());
         propertyRepository.save(existing);
     }
 

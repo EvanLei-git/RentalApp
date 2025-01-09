@@ -5,11 +5,14 @@ import gr.hua.dit.rentalapp.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 import java.util.Optional;
 
-
+/**
+ * 
+ */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -33,6 +36,7 @@ public class UserController {
         return userService.findByUsername(username);
     }
 
+
     // PUT: update user info (profile update, etc.)
     @PutMapping("/{userId}")
     public ResponseEntity<String> updateUser(@PathVariable Long userId, @RequestBody User updatedUser) {
@@ -46,4 +50,5 @@ public class UserController {
         userService.deleteUser(userId);
         return ResponseEntity.ok("User deleted successfully!");
     }
+    
 }

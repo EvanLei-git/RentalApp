@@ -35,14 +35,14 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="/home.html">RentalApp</a>
+            <a class="navbar-brand" href="/home">RentalApp</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/home.html">Home</a>
+                        <a class="nav-link" href="/home">Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="/properties.html">Browse Properties</a>
@@ -55,8 +55,8 @@
                     </li>
                 </ul>
                 <div id="authButtons">
-                    <a href="/login.html" class="btn btn-outline-light">Login</a>
-                    <a href="/register.html" class="btn btn-light ms-2">Register</a>
+                    <a href="/login" class="btn btn-outline-light">Login</a>
+                    <a href="/register" class="btn btn-light ms-2">Register</a>
                 </div>
             </div>
         </div>
@@ -156,14 +156,14 @@
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('userRole');
-            window.location.href = '/login.html';
+            window.location.href = '/login';
         }
 
         function checkAuth(event) {
             const token = localStorage.getItem('token');
             if (!token) {
                 event.preventDefault();
-                window.location.href = '/login.html';
+                window.location.href = '/login';
                 return false;
             }
             return true;
@@ -266,7 +266,7 @@
             
             const token = localStorage.getItem('token');
             if (!token) {
-                window.location.href = '/login.html';
+                window.location.href = '/login';
                 return;
             }
 

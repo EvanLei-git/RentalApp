@@ -39,15 +39,39 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/", "/home.html", "/login.html", "/register.html").permitAll()
+                .requestMatchers("/", "/home", "/login", "/register").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/static/**").permitAll()
-                // Protected endpoints
-                .requestMatchers("/dashboard/**", "/api/properties/**", "/api/users/**").authenticated()
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/templates/**").permitAll()
+                .requestMatchers("/api/properties/homeData", "/api/properties/filter", "/api/properties/*/details").permitAll()
+                .requestMatchers("/property/**").permitAll()
+                // Role-based access control
+                .requestMatchers("/api/tenant/**").hasRole("TENANT")
+                .requestMatchers("/api/landlord/**").hasRole("LANDLORD")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Dashboard access
+                .requestMatchers("/dashboard").authenticated()
+                .requestMatchers("/api/properties/**").authenticated()
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable());
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/api/auth/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/api/auth/logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .permitAll()
+            )
+            .rememberMe(remember -> remember
+                .key("uniqueAndSecretKey")
+                .tokenValiditySeconds(86400) // 24 hours
+            );
 
         return http.build();
     }

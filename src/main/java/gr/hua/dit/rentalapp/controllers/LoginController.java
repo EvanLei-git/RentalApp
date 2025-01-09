@@ -20,7 +20,14 @@ public class LoginController {
     }
 
     @GetMapping("/")
-    public String home() {
-        return "redirect:/dashboard";
+    public String root() {
+        return "redirect:/home";
     }
+    // GET: home page
+    @GetMapping("/home")
+    public ModelAndView home() {
+        return new ModelAndView("home");
+    }
+
+
 }
