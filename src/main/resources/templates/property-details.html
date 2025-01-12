@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Property Details</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .property-details {
             padding: 20px;
@@ -12,61 +13,159 @@
             margin-right: 10px;
             margin-bottom: 10px;
         }
+        .flatpickr-calendar {
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="/home">RentalApp</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/home">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/properties.html">Browse Properties</a>
-                    </li>
-                </ul>
-            </div>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="/home">RentalApp</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/home">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/properties.html">Browse Properties</a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <div class="property-details">
-        <div class="container">
-            <div class="card" style="position: relative;">
-                <div class="card-body">
-                    <h2 class="card-title" th:text="${property.address}">Property Address</h2>
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h4>Details</h4>
-                            <p><strong>Location:</strong> <span th:text="${property.city + ', ' + property.country}"></span></p>
-                            <p><strong>Price:</strong> <span th:text="${'€' + property.rentAmount}"></span></p>
-                            <p><strong>Size:</strong> <span th:text="${property.sizeInSquareMeters + ' m²'}"></span></p>
-                            <p><strong>Bedrooms:</strong> <span th:text="${property.bedrooms}"></span></p>
-                            <p><strong>Bathrooms:</strong> <span th:text="${property.bathrooms}"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>Features</h4>
-                            <div class="d-flex flex-wrap mt-3">
-                                <span th:if="${property.hasParking}" class="badge bg-primary feature-badge">Parking Available</span>
-                                <span th:if="${property.allowsPets}" class="badge bg-success feature-badge">Pets Allowed</span>
-                                <span th:if="${property.hasGarden}" class="badge bg-info feature-badge">Garden</span>
-                                <span th:if="${property.hasBalcony}" class="badge bg-warning feature-badge">Balcony</span>
-                            </div>
+<!-- Property Details -->
+<div class="property-details">
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title" th:text="${property.address}">Property Address</h2>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h4>Details</h4>
+                        <p><strong>Location:</strong> <span th:text="${property.city + ', ' + property.country}"></span></p>
+                        <p><strong>Price:</strong> <span th:text="${'€' + property.rentAmount}"></span></p>
+                        <p><strong>Size:</strong> <span th:text="${property.sizeInSquareMeters + ' m²'}"></span></p>
+                        <p><strong>Bedrooms:</strong> <span th:text="${property.bedrooms}"></span></p>
+                        <p><strong>Bathrooms:</strong> <span th:text="${property.bathrooms}"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Features</h4>
+                        <div class="d-flex flex-wrap mt-3">
+                            <span th:if="${property.hasParking}" class="badge bg-primary feature-badge">Parking Available</span>
+                            <span th:if="${property.allowsPets}" class="badge bg-success feature-badge">Pets Allowed</span>
+                            <span th:if="${property.hasGarden}" class="badge bg-info feature-badge">Garden</span>
+                            <span th:if="${property.hasBalcony}" class="badge bg-warning feature-badge">Balcony</span>
                         </div>
                     </div>
                 </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn" 
+                            th:classappend="${hasExistingVisit ? 'btn-secondary disabled' : 'btn-primary'}"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#scheduleVisitModal"
+                            th:disabled="${hasExistingVisit}"
+                            th:onclick="${hasExistingVisit} ? 'showExistingVisitMessage()' : ''">
+                        Schedule Visit
+                    </button>
+                    <div th:if="${hasExistingVisit}" class="text-muted mt-2">
+                        <small>You have already scheduled a visit for this property</small>
+                    </div>
+                </div>
+                
                 <div class="landlord-username" style="position: absolute; bottom: 10px; right: 10px; background-color: #f0f0f0; padding: 5px; border-radius: 5px;">
                     <strong>Landlord:</strong> <span th:text="${property.owner.username}"></span>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Schedule Visit Modal -->
+<div class="modal fade" id="scheduleVisitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule a Visit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <input type="text" id="calendar" class="form-control" placeholder="Select Date" readonly>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="scheduleVisit()" data-bs-dismiss="modal">
+                    Schedule Visit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    function showExistingVisitMessage() {
+        alert('You have already scheduled a visit for this property. You cannot schedule multiple visits.');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr("#calendar", {
+            inline: true,
+            minDate: "today",
+            dateFormat: "Y-m-d",
+            defaultDate: "today"
+        });
+    });
+
+    async function scheduleVisit() {
+        const selectedDate = document.getElementById('calendar').value;
+        if (!selectedDate) {
+            alert('Please select a date!');
+            return;
+        }
+
+        // Add default time (noon)
+        const visitDate = `${selectedDate}T12:00:00`;
+        const propertyId = '[[${property.propertyId}]]';
+
+        try {
+            const response = await fetch('/api/visits/schedule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    propertyId: propertyId,
+                    visitDate: visitDate 
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                if (response.status === 400 && errorData.message === 'Visit already exists') {
+                    alert('You have already scheduled a visit for this property.');
+                } else {
+                    throw new Error('Failed to schedule visit');
+                }
+                return;
+            }
+
+            const result = await response.json();
+            alert('Visit scheduled successfully!');
+            window.location.reload();
+        } catch (error) {
+            console.error('Error scheduling visit:', error);
+            alert('Failed to schedule visit. Please try again.');
+        }
+    }
+</script>
 </body>
 </html>

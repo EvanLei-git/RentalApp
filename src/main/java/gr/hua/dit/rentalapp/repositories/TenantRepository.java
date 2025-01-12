@@ -9,6 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
-    //  findByUsername() method to find a Tenant by username
     Optional<Tenant> findByUsername(String username);
 }

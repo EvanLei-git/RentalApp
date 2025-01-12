@@ -34,31 +34,58 @@ public class PropertyVisitController {
 
     // POST: request a visit (Tenant action)
     @PostMapping
-    public ResponseEntity<String> requestVisit(@RequestBody PropertyVisit visit) {
-        visit.setVisitStatus(VisitStatus.REQUESTED);
-        visitService.createVisit(visit);
-        return ResponseEntity.ok("Visit requested successfully!");
+    public ResponseEntity<PropertyVisit> requestVisit(@RequestParam Long tenantId, @RequestParam Long propertyId) {
+        PropertyVisit visit = visitService.createVisit(tenantId, propertyId);
+        return ResponseEntity.ok(visit);
+    }
+
+    // POST: schedule a visit
+    @PostMapping("/schedule")
+    public ResponseEntity<PropertyVisit> scheduleVisit(@RequestBody VisitRequest request) {
+        PropertyVisit visit = visitService.createAndScheduleVisit(request.getPropertyId(), request.getVisitDate());
+        return ResponseEntity.ok(visit);
+    }
+
+    static class VisitRequest {
+        private Long propertyId;
+        private String visitDate;
+
+        public Long getPropertyId() {
+            return propertyId;
+        }
+
+        public void setPropertyId(Long propertyId) {
+            this.propertyId = propertyId;
+        }
+
+        public String getVisitDate() {
+            return visitDate;
+        }
+
+        public void setVisitDate(String visitDate) {
+            this.visitDate = visitDate;
+        }
     }
 
     // PUT: schedule a visit (Landlord action)
     @PutMapping("/{id}/schedule")
-    public ResponseEntity<String> scheduleVisit(@PathVariable Long id, @RequestBody PropertyVisit updatedVisit) {
-        visitService.scheduleVisit(id, updatedVisit.getVisitDate());
-        return ResponseEntity.ok("Visit scheduled successfully!");
+    public ResponseEntity<PropertyVisit> scheduleVisit(@PathVariable Long id, @RequestBody String visitDate) {
+        PropertyVisit updatedVisit = visitService.scheduleVisit(id, visitDate);
+        return ResponseEntity.ok(updatedVisit);
     }
 
     // PUT: cancel a visit (Tenant or Landlord)
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<String> cancelVisit(@PathVariable Long id) {
-        visitService.cancelVisit(id);
-        return ResponseEntity.ok("Visit canceled.");
+    public ResponseEntity<PropertyVisit> cancelVisit(@PathVariable Long id) {
+        PropertyVisit canceledVisit = visitService.cancelVisit(id);
+        return ResponseEntity.ok(canceledVisit);
     }
 
-    // PUT: mark as completed
-    @PutMapping("/{id}/complete")
-    public ResponseEntity<String> markVisitCompleted(@PathVariable Long id) {
-        visitService.markVisitCompleted(id);
-        return ResponseEntity.ok("Visit marked as completed.");
+    // PUT: update status
+    @PutMapping("/{id}/update-status")
+    public ResponseEntity<PropertyVisit> updateVisitStatus(@PathVariable Long id, @RequestBody VisitStatus status) {
+        PropertyVisit updatedVisit = visitService.updateVisitStatus(id, status);
+        return ResponseEntity.ok(updatedVisit);
     }
 
     // DELETE: remove the record entirely if needed

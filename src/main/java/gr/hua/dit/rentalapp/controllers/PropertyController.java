@@ -1,7 +1,9 @@
 package gr.hua.dit.rentalapp.controllers;
 
 import gr.hua.dit.rentalapp.entities.Property;
+import gr.hua.dit.rentalapp.entities.PropertyVisit;
 import gr.hua.dit.rentalapp.services.PropertyService;
+import gr.hua.dit.rentalapp.services.PropertyVisitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,16 +16,20 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import java.security.Principal;
+
 
 @Controller
 @RequestMapping("/property")
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final PropertyVisitService propertyVisitService;
 
     @Autowired
-    public PropertyController(PropertyService propertyService) {
+    public PropertyController(PropertyService propertyService, PropertyVisitService propertyVisitService) {
         this.propertyService = propertyService;
+        this.propertyVisitService = propertyVisitService;
     }
 
     // GET all properties
@@ -165,10 +171,20 @@ public class PropertyController {
 
     // GET single property page
     @GetMapping("/{propertyId}/details")
-    public ModelAndView getPropertyDetails(@PathVariable Long propertyId) {
+    public ModelAndView showPropertyDetails(@PathVariable Long propertyId, Principal principal) {
         Property property = propertyService.getPropertyById(propertyId);
-        ModelAndView modelAndView = new ModelAndView("property-details");
-        modelAndView.addObject("property", property);
-        return modelAndView;
+        List<PropertyVisit> visits = propertyVisitService.getVisitsByProperty(propertyId);
+        
+        ModelAndView mav = new ModelAndView("property-details");
+        mav.addObject("property", property);
+        mav.addObject("visits", visits);
+        
+        // Check if current user has already scheduled a visit
+        if (principal != null) {
+            boolean hasExistingVisit = propertyVisitService.hasExistingVisit(propertyId, principal.getName());
+            mav.addObject("hasExistingVisit", hasExistingVisit);
+        }
+        
+        return mav;
     }
 }
