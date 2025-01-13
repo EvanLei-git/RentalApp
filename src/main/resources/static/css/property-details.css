@@ -1,0 +1,153 @@
+.property-details {
+    padding: 40px 0;
+    margin-top: 56px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 56px);
+}
+
+.property-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.property-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+.property-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 2rem;
+    margin: -1rem -1rem 1.5rem -1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.property-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.landlord-info {
+    color: white;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.schedule-btn, .rent-btn {
+    min-width: 180px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    border: none;
+}
+
+.schedule-btn {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+}
+
+.rent-btn {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    color: white;
+}
+
+.schedule-btn:hover, .rent-btn:hover {
+    opacity: 0.9;
+    color: white;
+}
+
+.property-info {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.property-info:hover {
+    transform: translateY(-2px);
+}
+
+.property-info h4 {
+    color: #1e3c72;
+    margin-bottom: 1.2rem;
+    font-weight: 600;
+}
+
+.property-info p {
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.feature-badge {
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.back-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.back-button:hover {
+    background-color: #f0f0f0;
+}
+
+/* Modal Styles */
+.time-select-container {
+    position: relative;
+    max-height: 250px;
+}
+
+#visitTime {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+@media (max-width: 991.98px) {
+    .property-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .schedule-btn, .rent-btn {
+        width: 100%;
+    }
+}

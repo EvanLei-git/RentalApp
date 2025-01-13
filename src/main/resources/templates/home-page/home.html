@@ -3,269 +3,87 @@
 <head>
     <title>RentalApp - Home</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .container {
-            max-width: 95%;
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-        .filter-panel {
-            position: sticky;
-            top: 76px;
-            height: calc(100vh - 76px);
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-left: 1px solid #dee2e6;
-            overflow-y: auto;
-        }
-        .property-grid {
-            padding: 20px;
-            margin-top: 0;
-        }
-        .welcome-banner {
-            width: 100%;
-            margin: 56px 0 0 0;
-            padding: 3rem 2rem;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            text-align: center;
-        }
-        .welcome-banner h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .welcome-banner p {
-            font-size: 1.25rem;
-            opacity: 0.9;
-        }
-        .main-content {
-            display: flex;
-            margin-top: 20px;
-        }
-        .content-area {
-            flex: 1;
-        }
-        .filter-sidebar {
-            width: 300px;
-            margin-right: 20px;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 700px) {
-            .main-content {
-                flex-direction: column;
-                margin-top: 0;
-            }
-            .filter-sidebar {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 20px;
-            }
-            .filter-panel {
-                position: relative;
-                height: auto;
-                max-height: none;
-                border-left: none;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                margin: 15px;
-                top: 0;
-            }
-            .container {
-                padding-left: 0;
-                padding-right: 0;
-            }
-            .property-grid {
-                padding: 15px;
-            }
-            .welcome-banner {
-                padding: 2rem 1rem;
-                margin-bottom: 0;
-            }
-            .welcome-banner h1 {
-                font-size: 2rem;
-            }
-            .welcome-banner p {
-                font-size: 1.1rem;
-            }
-            .content-area {
-                width: 100%;
-            }
-            .row {
-                margin-right: 0;
-                margin-left: 0;
-            }
-            /* Show 1 property per row */
-            .row-cols-1 > * {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-
-        /* Show 1 property per row (701px - 1100px) */
-        @media (min-width: 701px) and (max-width: 1100px) {
-            .row-cols-md-2 > * {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-
-        /* Show 2 properties per row (1101px - 1500px) */
-        @media (min-width: 1101px) and (max-width: 1500px) {
-            .row-cols-lg-3 > * {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-        }
-
-        /* Show 3 properties per row (1501px and above) */
-        @media (min-width: 1501px) {
-            .row-cols-xl-4 > * {
-                flex: 0 0 33.333333%;
-                max-width: 33.333333%;
-            }
-        }
-        
-        .property-card {
-            height: 100%;
-            transition: transform 0.2s;
-        }
-        .property-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .landlord-username {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #f0f0f0;
-            padding: 5px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-        }
-        .navbar-brand {
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-    </style>
+    <link href="/css/home.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="/home">RentalApp</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/home">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/properties.html">Browse Properties</a>
-                    </li>
-                    <li class="nav-item" sec:authorize="hasRole('LANDLORD')">
-                        <a class="nav-link" href="/property-management.html">Manage Properties</a>
-                    </li>
-                    <li class="nav-item" sec:authorize="isAuthenticated()">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                    </li>
-                </ul>
-                <div id="authButtons" class="d-flex align-items-center">
-                    <div th:if="${#authorization.expression('!isAuthenticated()')}">
-                        <a href="/login" class="btn btn-outline-light me-2">Login</a>
-                        <a href="/register" class="btn btn-light">Register</a>
+    <!-- Include Header -->
+    <div th:replace="~{page_layout/header :: header}"></div>
+
+    <main>
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h1>Your Dream Home Awaits</h1>
+            <p>#1 Property Marketplace in Greece</p>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content container">
+            <!-- Filter Panel -->
+            <div class="filter-sidebar">
+                <div class="filter-panel">
+                    <h4 class="mb-4">Filters</h4>
+                    
+                    <!-- Location Filters -->
+                    <div class="mb-3">
+                        <label class="form-label">City</label>
+                        <select class="form-select" id="cityFilter">
+                            <option value="">All Cities</option>
+                            <option th:each="city : ${cities}" th:value="${city}" th:text="${city}"></option>
+                        </select>
                     </div>
-                    <div th:if="${#authorization.expression('isAuthenticated()')}">
-                        <span class="text-white me-3">Welcome, <span th:text="${#authentication.name}"></span>!</span>
-                        <form th:action="@{/api/auth/logout}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-outline-light">Logout</button>
-                        </form>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Country</label>
+                        <select class="form-select" id="countryFilter">
+                            <option value="">All Countries</option>
+                            <option th:each="country : ${countries}" th:value="${country}" th:text="${country}"></option>
+                        </select>
+                    </div>
+                    
+                    <!-- Price Range -->
+                    <div class="mb-3">
+                        <label class="form-label">Price Range</label>
+                        <div class="d-flex gap-2">
+                            <input type="number" class="form-control" id="minPrice" th:value="${minPrice}" placeholder="Min">
+                            <input type="number" class="form-control" id="maxPrice" th:value="${maxPrice}" placeholder="Max">
+                        </div>
+                    </div>
+                    
+                    <!-- Amenities -->
+                    <div class="mb-3">
+                        <label class="form-label">Amenities</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="parkingFilter">
+                            <label class="form-check-label">Parking</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="petsFilter">
+                            <label class="form-check-label">Pets Allowed</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="gardenFilter">
+                            <label class="form-check-label">Garden</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="balconyFilter">
+                            <label class="form-check-label">Balcony</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Property Grid -->
+            <div class="content-area">
+                <div class="property-grid">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="propertyGrid">
                     </div>
                 </div>
             </div>
         </div>
-    </nav>
+    </main>
 
-    <!-- Welcome Banner -->
-    <div class="welcome-banner">
-        <h1>Your Dream Home Awaits</h1>
-        <p>#1 Property Marketplace in Greece</p>
-    </div>
-
-    <!-- Main Content Area -->
-    <div class="main-content container">
-        <!-- Filter Panel -->
-        <div class="filter-sidebar">
-            <div class="filter-panel">
-                <h4 class="mb-4">Filters</h4>
-                
-                <!-- Location Filters -->
-                <div class="mb-3">
-                    <label class="form-label">City</label>
-                    <select class="form-select" id="cityFilter">
-                        <option value="">All Cities</option>
-                        <option th:each="city : ${cities}" th:value="${city}" th:text="${city}"></option>
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Country</label>
-                    <select class="form-select" id="countryFilter">
-                        <option value="">All Countries</option>
-                        <option th:each="country : ${countries}" th:value="${country}" th:text="${country}"></option>
-                    </select>
-                </div>
-                
-                <!-- Price Range -->
-                <div class="mb-3">
-                    <label class="form-label">Price Range</label>
-                    <div class="d-flex gap-2">
-                        <input type="number" class="form-control" id="minPrice" th:value="${minPrice}" placeholder="Min">
-                        <input type="number" class="form-control" id="maxPrice" th:value="${maxPrice}" placeholder="Max">
-                    </div>
-                </div>
-                
-                <!-- Amenities -->
-                <div class="mb-3">
-                    <label class="form-label">Amenities</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="parkingFilter">
-                        <label class="form-check-label">Parking</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="petsFilter">
-                        <label class="form-check-label">Pets Allowed</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="gardenFilter">
-                        <label class="form-check-label">Garden</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="balconyFilter">
-                        <label class="form-check-label">Balcony</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Property Grid -->
-        <div class="content-area">
-            <div class="property-grid">
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="propertyGrid">
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Include Footer -->
+    <div th:replace="~{page_layout/footer :: footer}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">

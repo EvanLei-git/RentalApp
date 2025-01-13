@@ -2,11 +2,17 @@ package gr.hua.dit.rentalapp.controllers;
 
 import gr.hua.dit.rentalapp.entities.Property;
 import gr.hua.dit.rentalapp.entities.PropertyVisit;
+import gr.hua.dit.rentalapp.entities.User;
+import gr.hua.dit.rentalapp.entities.Role;
+import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.services.PropertyService;
 import gr.hua.dit.rentalapp.services.PropertyVisitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -18,7 +24,9 @@ import java.util.stream.Collectors;
 import java.util.Collections;
 import java.security.Principal;
 
-
+/**
+ * This controller handles all the requests related to properties.
+ */
 @Controller
 @RequestMapping("/property")
 public class PropertyController {
@@ -175,9 +183,18 @@ public class PropertyController {
         Property property = propertyService.getPropertyById(propertyId);
         List<PropertyVisit> visits = propertyVisitService.getVisitsByProperty(propertyId);
         
-        ModelAndView mav = new ModelAndView("property-details");
+        ModelAndView mav = new ModelAndView("/property-details/property-details");
         mav.addObject("property", property);
         mav.addObject("visits", visits);
+        
+        // Add authentication information
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("TENANT"))) {
+            mav.addObject("isTenant", true);
+        } else {
+            mav.addObject("isTenant", false);
+        }
         
         // Check if current user has already scheduled a visit
         if (principal != null) {

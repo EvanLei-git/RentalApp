@@ -1,22 +1,18 @@
 <!DOCTYPE html>
-<html lang="en"
-      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Footer</title>
 </head>
 <body>
-
-<footer class="mastfoot mt-auto" th:fragment="header">
-  <div class="inner">
-      <div sec:authorize="isAuthenticated()">
-          Authenticated username:
-          <span sec:authentication="name"></span>
-          Authenticated user roles:
-          <span sec:authentication="principal.authorities"></span>
-      </div>
-    <p>Cover template for <a href="https://getbootstrap.com/">Bootstrap</a>, by <a href="https://twitter.com/mdo">@mdo</a>.</p>
-  </div>
-</footer>
+    <footer th:fragment="footer">
+        <div style="position: relative; color: white; padding: 2rem 0; margin-top: 3rem; overflow: hidden; min-width: 100%; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+            <!-- Parallelogram shape -->
+            <div style="position: absolute; top: 0; left: -10%; right: -10%; bottom: 0; transform: skew(-10deg); background: inherit; z-index: -1;"></div>
+            <!-- Content -->
+            <div class="container" style="text-align: center; position: relative;">
+                <p style="margin: 0; font-size: 1rem; font-weight: 500; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">&copy; 2024-2025 Harokopio University Assignment. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

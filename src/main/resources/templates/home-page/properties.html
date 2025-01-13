@@ -6,31 +6,7 @@
     <title>Browse Properties - RentalApp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        .property-card {
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .property-card:hover {
-            transform: translateY(-5px);
-        }
-        .amenity-badge {
-            margin-right: 5px;
-            margin-bottom: 5px;
-        }
-        .property-image {
-            height: 200px;
-            object-fit: cover;
-            width: 100%;
-        }
-        .filters {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-    </style>
+    <link href="/css/properties.css" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -46,9 +22,6 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="/properties.html">Browse Properties</a>
-                    </li>
-                    <li class="nav-item landlord-only" style="display: none;">
-                        <a class="nav-link" href="/property-management.html">Manage Properties</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/dashboard" onclick="return checkAuth(event)">Dashboard</a>

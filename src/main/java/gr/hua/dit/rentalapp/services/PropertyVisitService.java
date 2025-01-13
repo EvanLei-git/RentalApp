@@ -14,9 +14,12 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 @Service
 public class PropertyVisitService {
@@ -24,6 +27,8 @@ public class PropertyVisitService {
     private final PropertyVisitRepository propertyVisitRepository;
     private final PropertyRepository propertyRepository;
     private final TenantRepository tenantRepository;
+
+    private static final Object SCHEDULE_LOCK = new Object();
 
     @Autowired
     public PropertyVisitService(PropertyVisitRepository propertyVisitRepository, PropertyRepository propertyRepository, TenantRepository tenantRepository) {
@@ -96,33 +101,150 @@ public class PropertyVisitService {
     }
 
     public PropertyVisit createAndScheduleVisit(Long propertyId, String visitDateStr) {
-        Property property = propertyRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Property not found!"));
+        synchronized(SCHEDULE_LOCK) {
+            try {
+                // Parse the requested date first
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+                Date requestedDate = dateFormat.parse(visitDateStr);
 
-        // Get the current authenticated user as tenant
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        Tenant tenant = tenantRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Tenant not found!"));
+                // Check if the exact time slot is already taken
+                List<PropertyVisit> existingVisits = propertyVisitRepository
+                    .findByProperty_PropertyIdAndVisitDateBetween(
+                        propertyId, 
+                        requestedDate,
+                        requestedDate
+                    );
 
-        PropertyVisit visit = new PropertyVisit();
-        visit.setTenant(tenant);
-        visit.setProperty(property);
-        visit.setLandlord(property.getOwner());
-        visit.setVisitStatus(VisitStatus.SCHEDULED);
-        
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-            Date visitDate = dateFormat.parse(visitDateStr);
-            visit.setVisitDate(visitDate);
-        } catch (ParseException e) {
-            throw new RuntimeException("Invalid date format");
+                if (!existingVisits.isEmpty()) {
+                    throw new RuntimeException("This time slot is already taken. Please choose a different time.");
+                }
+
+                Property property = propertyRepository.findById(propertyId)
+                        .orElseThrow(() -> new RuntimeException("Property not found!"));
+
+                // Get the current authenticated user as tenant
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                String username = auth.getName();
+                Tenant tenant = tenantRepository.findByUsername(username)
+                        .orElseThrow(() -> new RuntimeException("Tenant not found!"));
+
+                // Check for existing visits and delete them
+                PropertyVisit existingVisit = propertyVisitRepository.findByProperty_PropertyIdAndTenant_Username(propertyId, username);
+                if (existingVisit != null) {
+                    propertyVisitRepository.delete(existingVisit);
+                }
+
+                PropertyVisit visit = new PropertyVisit();
+                visit.setTenant(tenant);
+                visit.setProperty(property);
+                visit.setLandlord(property.getOwner());
+                visit.setVisitStatus(VisitStatus.SCHEDULED);
+                visit.setVisitDate(requestedDate);
+
+                return propertyVisitRepository.save(visit);
+            } catch (ParseException e) {
+                throw new RuntimeException("Invalid date format");
+            }
         }
-
-        return propertyVisitRepository.save(visit);
     }
 
     public boolean hasExistingVisit(Long propertyId, String username) {
-        return propertyVisitRepository.existsByPropertyPropertyIdAndTenantUsername(propertyId, username);
+        return propertyVisitRepository.existsByProperty_PropertyIdAndTenant_Username(propertyId, username);
+    }
+
+    public PropertyVisit getCurrentVisit(Long propertyId, String username) {
+        try {
+            PropertyVisit visit = propertyVisitRepository.findByProperty_PropertyIdAndTenant_Username(propertyId, username);
+            if (visit != null && visit.getVisitDate() != null) {
+                // Ensure the date is properly formatted
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+                String formattedDate = dateFormat.format(visit.getVisitDate());
+                visit.setVisitDate(dateFormat.parse(formattedDate));
+            }
+            return visit;
+        } catch (Exception e) {
+            // Log the error but don't throw it
+            System.err.println("Error retrieving visit: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public PropertyVisit updateVisit(Long propertyId, String visitDateStr) {
+        synchronized(SCHEDULE_LOCK) {
+            try {
+                // Parse the requested date first
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+                Date requestedDate = dateFormat.parse(visitDateStr);
+
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                String username = auth.getName();
+                
+                PropertyVisit currentVisit = propertyVisitRepository.findByProperty_PropertyIdAndTenant_Username(propertyId, username);
+                if (currentVisit == null) {
+                    throw new RuntimeException("No existing visit found");
+                }
+
+                // Check if the exact time slot is already taken by someone else
+                List<PropertyVisit> existingVisits = propertyVisitRepository
+                    .findByProperty_PropertyIdAndVisitDateBetween(
+                        propertyId, 
+                        requestedDate,
+                        requestedDate
+                    )
+                    .stream()
+                    .filter(visit -> !visit.getVisitId().equals(currentVisit.getVisitId()))
+                    .toList();
+
+                if (!existingVisits.isEmpty()) {
+                    throw new RuntimeException("This time slot is already taken. Please choose a different time.");
+                }
+
+                currentVisit.setVisitDate(requestedDate);
+                return propertyVisitRepository.save(currentVisit);
+            } catch (ParseException e) {
+                throw new RuntimeException("Invalid date format");
+            }
+        }
+    }
+
+    public void cancelVisit(Long propertyId, String username) {
+        PropertyVisit visit = propertyVisitRepository.findByProperty_PropertyIdAndTenant_Username(propertyId, username);
+        if (visit == null) {
+            throw new RuntimeException("No visit found to cancel");
+        }
+        propertyVisitRepository.delete(visit);
+    }
+
+    public List<String> getTakenTimeSlots(Long propertyId, String dateStr) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            Date date = dateFormat.parse(dateStr);
+            
+            // Set time to start of day
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            Date startDate = calendar.getTime();
+            
+            // Set time to end of day
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            Date endDate = calendar.getTime();
+
+            // Get all visits for this property on this date
+            List<PropertyVisit> visits = propertyVisitRepository.findByProperty_PropertyIdAndVisitDateBetween(
+                    propertyId, startDate, endDate);
+
+            // Extract the time slots that are taken
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+            return visits.stream()
+                    .map(visit -> timeFormat.format(visit.getVisitDate()))
+                    .collect(Collectors.toList());
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Please use yyyy-MM-dd", e);
+        }
     }
 }

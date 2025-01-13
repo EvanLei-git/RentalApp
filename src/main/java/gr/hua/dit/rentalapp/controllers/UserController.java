@@ -1,7 +1,7 @@
 package gr.hua.dit.rentalapp.controllers;
 
 import gr.hua.dit.rentalapp.entities.User;
-import gr.hua.dit.rentalapp.services.UserService;
+import gr.hua.dit.rentalapp.services.UserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +17,10 @@ import java.util.Optional;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserService userService;
+    private final UserAuthService userService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserAuthService userService) {
         this.userService = userService;
     }
 

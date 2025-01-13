@@ -1,36 +1,153 @@
 package gr.hua.dit.rentalapp.controllers;
 
-import gr.hua.dit.rentalapp.entities.Role;
+import gr.hua.dit.rentalapp.entities.*;
 import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.repositories.RoleRepository;
-import gr.hua.dit.rentalapp.services.AuthService;
+import gr.hua.dit.rentalapp.services.UserAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/auth")
+@Controller
+@RequestMapping("/")
 public class AuthController {
-
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final RoleRepository roleRepository;
-    private final AuthService authService;
+    private final UserAuthService userAuthService;
 
     @Autowired
-    public AuthController(RoleRepository roleRepository, AuthService authService) {
+    public AuthController(RoleRepository roleRepository, UserAuthService userAuthService) {
         this.roleRepository = roleRepository;
-        this.authService = authService;
+        this.userAuthService = userAuthService;
+    }
+
+    // View endpoints for login
+    @GetMapping("/login")
+    public ModelAndView login() {
+        return new ModelAndView("/auth/login");
+    }
+
+    @GetMapping("/dashboard")
+    public ModelAndView dashboard() {
+        return new ModelAndView("dashboard/dashboard");
+    }
+
+    @GetMapping("/")
+    public ModelAndView root() {
+        return new ModelAndView("redirect:/home");
+    }
+
+    @GetMapping("/home")
+    public ModelAndView home() {
+        return new ModelAndView("/home-page/home");
+    }
+
+    // View endpoints for registration
+    @GetMapping("/register")
+    public ModelAndView showRegistrationForm() {
+        return new ModelAndView("/auth/register");
+    }
+
+    @PostMapping("/register")
+    public ModelAndView registerUser(@RequestParam String email,
+                                   @RequestParam String username,
+                                   @RequestParam String password,
+                                   @RequestParam String firstName,
+                                   @RequestParam String lastName,
+                                   @RequestParam String role,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            // Check if username already exists
+            if (userAuthService.findByUsername(username).isPresent()) {
+                ModelAndView mav = new ModelAndView("/auth/register");
+                mav.addObject("error", "Username already exists!");
+                return mav;
+            }
+
+            // Register the user
+            userAuthService.register(username, email, password, firstName, lastName, role);
+
+            // Redirect to login page with success message
+            ModelAndView mav = new ModelAndView("redirect:/login");
+            redirectAttributes.addFlashAttribute("success", "Registration successful! Please login.");
+            return mav;
+
+        } catch (Exception e) {
+            ModelAndView mav = new ModelAndView("/auth/register");
+            mav.addObject("error", "Registration failed: " + e.getMessage());
+            return mav;
+        }
+    }
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        userAuthService.logout();
+        return ResponseEntity.ok("User logged out successfully!");
+    }
+
+    // REST API endpoints
+    @PostMapping("/api/auth/register")
+    public ResponseEntity<?> registerUserApi(@RequestBody Map<String, String> requestData) {
+        try {
+            String username = requestData.get("username");
+            String email = requestData.get("email");
+            String password = requestData.get("password");
+            String firstName = requestData.get("firstName");
+            String lastName = requestData.get("lastName");
+            String role = requestData.get("role");
+
+            // Validate required fields
+            if (username == null || email == null || password == null || role == null || firstName == null || lastName == null) {
+                return ResponseEntity.badRequest().body("All fields are required");
+            }
+
+            // Register the user
+            userAuthService.register(username, email, password, firstName, lastName, role);
+            return ResponseEntity.ok("User registered successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/auth/login")
+    public ResponseEntity<?> authenticateUser(@RequestBody Map<String, String> credentials) {
+        try {
+            String username = credentials.get("username");
+            String password = credentials.get("password");
+
+            // Validate required fields
+            if (username == null || password == null) {
+                return ResponseEntity.badRequest().body("Username and password are required");
+            }
+
+            // AuthService logic
+            Map<String, String> authResponse = userAuthService.login(username, password);
+
+            // Create response with token and redirect URL
+            Map<String, String> response = new HashMap<>();
+            response.put("token", authResponse.get("token"));
+            response.put("role", authResponse.get("role"));
+            response.put("redirect", "/home");
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/auth/logout")
+    public ResponseEntity<String> logoutApi() {
+        // No need to call userAuthService.logout() since we're handling it client-side
+        return ResponseEntity.ok("User logged out successfully!");
     }
 
     @PostConstruct
@@ -51,62 +168,5 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Error setting up default roles", e);
         }
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> requestData) {
-        try {
-            String username = requestData.get("username");
-            String email = requestData.get("email");
-            String password = requestData.get("password");
-            String firstName = requestData.get("firstName");
-            String lastName = requestData.get("lastName");
-            String role = requestData.get("role");
-
-            // Validate required fields
-            if (username == null || email == null || password == null || role == null || firstName == null || lastName == null) {
-                return ResponseEntity.badRequest().body("All fields are required");
-            }
-
-            // Register the user
-            authService.register(username, email, password, firstName, lastName, role);
-            return ResponseEntity.ok("User registered successfully");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        try {
-            String username = credentials.get("username");
-            String password = credentials.get("password");
-
-            // Validate required fields
-            if (username == null || password == null) {
-                return ResponseEntity.badRequest().body("Username and password are required");
-            }
-
-            // AuthService logic
-            Map<String, String> authResponse = authService.login(username, password);
-
-            // Create response with token and redirect URL
-            Map<String, String> response = new HashMap<>();
-            response.put("token", authResponse.get("token"));
-            response.put("role", authResponse.get("role"));
-            response.put("redirect", "/home");
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
-        authService.logout();
-        return ResponseEntity.ok("User logged out successfully!");
     }
 }
