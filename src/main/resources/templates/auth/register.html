@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentalApp - Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,22 +47,14 @@
             margin-bottom: 0.5rem;
             color: #374151;
         }
-        .form-group input {
+        .form-control {
             width: 100%;
             padding: 0.5rem;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             box-sizing: border-box;
         }
-        .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            background-color: white;
-            box-sizing: border-box;
-        }
-        .register-btn {
+        .btn-register {
             width: 100%;
             padding: 0.75rem;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -72,7 +66,7 @@
             font-weight: 600;
             transition: opacity 0.2s ease;
         }
-        .register-btn:hover {
+        .btn-register:hover {
             opacity: 0.9;
         }
         .error-message {
@@ -92,158 +86,189 @@
         .login-link a:hover {
             text-decoration: underline;
         }
-        .tenant-fields {
-            display: none;
+        .verification-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
         }
-        .upload-group {
-            margin-top: 0.5rem;
+        .verification-status.verified {
+            background-color: #e6f3ff;
+            color: #0066cc;
         }
-        .upload-group small {
-            display: block;
-            color: #666;
-            margin-top: 0.25rem;
+        .verification-status.unverified {
+            background-color: #ffe6e6;
+            color: #cc0000;
         }
     </style>
 </head>
 <body>
-<div class="register-container">
-    <div class="header">
-        <h1>RentalApp</h1>
-        <p>Create your account</p>
+    <div class="register-container">
+        <div class="header">
+            <h1>RentalApp</h1>
+            <p>Create your account</p>
+        </div>
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" class="form-control" onchange="toggleVerifyButton()" required>
+                    <option value="">Select role...</option>
+                    <option value="TENANT">Tenant</option>
+                    <option value="LANDLORD">Landlord</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-register mb-3">Register</button>
+            <button type="button" id="verifyBtn" class="btn btn-success w-100 mb-3" style="display: none;" 
+                    data-bs-toggle="modal" data-bs-target="#verifyModal">
+                <i class="fas fa-user-check me-2"></i>Verify Account
+            </button>
+            
+            <div class="login-link">
+                Already have an account? <a href="/login">Login here</a>
+            </div>
+        </form>
     </div>
 
-    <form id="registerForm" onsubmit="handleRegister(event)">
-        <div class="form-group">
-            <label for="firstName">First Name</label>
-            <input type="text" id="firstName" name="firstName" required minlength="2" maxlength="50">
-        </div>
-
-        <div class="form-group">
-            <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" name="lastName" required minlength="2" maxlength="50">
-        </div>
-
-        <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
-        </div>
-
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
-        </div>
-
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-
-        <div class="form-group">
-            <label for="role">Role</label>
-            <select id="role" name="role" required onchange="toggleTenantFields()">
-                <option value="TENANT">Tenant</option>
-                <option value="LANDLORD">Landlord</option>
-            </select>
-        </div>
-
-        <!-- Tenant-specific fields -->
-        <div id="tenantFields" class="tenant-fields">
-            <div class="form-group">
-                <label for="monthlyIncome">Monthly Income</label>
-                <input type="number" id="monthlyIncome" name="monthlyIncome" placeholder="Optional">
-            </div>
-            <div class="form-group">
-                <label for="employmentStatus">Employment Status</label>
-                <input type="text" id="employmentStatus" name="employmentStatus" placeholder="Optional">
-            </div>
-            <div class="form-group">
-                <label>Identity Documents (Optional)</label>
-                <div class="upload-group">
-                    <input type="file" id="idFront" name="idFront" accept="image/*">
-                    <small>Front of ID</small>
+    <!-- Verification Modal -->
+    <div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="verifyModalLabel">
+                        <i class="fas fa-user-check me-2"></i>Verify Your Account
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="upload-group">
-                    <input type="file" id="idBack" name="idBack" accept="image/*">
-                    <small>Back of ID</small>
-                </div>
+                <form id="verificationForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="monthlyIncome" class="form-label">Monthly Income</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" id="monthlyIncome" 
+                                       name="monthlyIncome" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="employmentStatus" class="form-label">Employment Status</label>
+                            <select class="form-select" id="employmentStatus" name="employmentStatus" required>
+                                <option value="">Select status...</option>
+                                <option value="EMPLOYED">Employed</option>
+                                <option value="SELF_EMPLOYED">Self Employed</option>
+                                <option value="STUDENT">Student</option>
+                                <option value="RETIRED">Retired</option>
+                                <option value="UNEMPLOYED">Unemployed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="identityDocument" class="form-label">Identity Document</label>
+                            <input type="file" class="form-control" id="identityDocument" 
+                                   name="identityDocument" accept="image/*,.pdf" required>
+                            <small class="text-muted">Upload a photo ID or passport (PDF or image)</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Later
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>Submit Verification
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <button type="submit" class="register-btn">Create Account</button>
-
-        <div id="errorMessage" class="error-message"></div>
-    </form>
-
-    <div class="login-link">
-        <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
-</div>
 
-<script>
-    function toggleTenantFields() {
-        const role = document.getElementById('role').value;
-        const tenantFields = document.getElementById('tenantFields');
-        tenantFields.style.display = role === 'TENANT' ? 'block' : 'none';
-    }
-
-    async function handleRegister(event) {
-        event.preventDefault();
-
-        const formData = new FormData();
-        formData.append('username', document.getElementById('username').value);
-        formData.append('email', document.getElementById('email').value);
-        formData.append('password', document.getElementById('password').value);
-        formData.append('firstName', document.getElementById('firstName').value);
-        formData.append('lastName', document.getElementById('lastName').value);
-        formData.append('role', document.getElementById('role').value);
-
-        const monthlyIncome = document.getElementById('monthlyIncome').value;
-        if (monthlyIncome) {
-            formData.append('monthlyIncome', monthlyIncome);
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleVerifyButton() {
+            const role = document.getElementById('role').value;
+            const verifyBtn = document.getElementById('verifyBtn');
+            verifyBtn.style.display = role === 'TENANT' ? 'block' : 'none';
         }
 
-        const employmentStatus = document.getElementById('employmentStatus').value;
-        if (employmentStatus) {
-            formData.append('employmentStatus', employmentStatus);
-        }
+        async function handleRegister(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = {
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                role: formData.get('role')
+            };
 
-        const idFront = document.getElementById('idFront').files[0];
-        const idBack = document.getElementById('idBack').files[0];
-        
-        if (idFront) {
-            formData.append('idFront', idFront);
-        }
-        if (idBack) {
-            formData.append('idBack', idBack);
-        }
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
 
-        const errorMessage = document.getElementById('errorMessage');
-
-        try {
-            const response = await fetch('/register', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Registration failed. Please try again.');
-            }
-
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error);
+                if (response.ok) {
+                    window.location.href = '/login?registered=true';
+                } else {
+                    const error = await response.text();
+                    document.querySelector('.error-message').textContent = error;
+                    document.querySelector('.error-message').style.display = 'block';
                 }
+            } catch (error) {
+                console.error('Registration error:', error);
+                document.querySelector('.error-message').textContent = 'An error occurred during registration';
+                document.querySelector('.error-message').style.display = 'block';
             }
-
-            // Redirect to the login page
-            window.location.href = '/login';
-        } catch (error) {
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = error.message || 'Registration failed. Please try again.';
         }
-    }
-</script>
+
+        document.getElementById('verificationForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('/api/auth/verify-tenant', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login?verified=true';
+                } else {
+                    const error = await response.text();
+                    alert('Verification failed: ' + error);
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                alert('An error occurred during verification');
+            }
+        });
+    </script>
 </body>
 </html>

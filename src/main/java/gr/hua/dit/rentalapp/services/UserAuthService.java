@@ -49,9 +49,31 @@ public class UserAuthService implements UserDetailsService {
     public void updateUser(Long userId, User updatedUser) {
         User existing = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-        existing.setUsername(updatedUser.getUsername());
-        existing.setEmail(updatedUser.getEmail());
-        existing.setRoles(updatedUser.getRoles());
+
+        // Update basic information
+        if (updatedUser.getUsername() != null && !updatedUser.getUsername().isEmpty()) {
+            existing.setUsername(updatedUser.getUsername());
+        }
+        if (updatedUser.getEmail() != null && !updatedUser.getEmail().isEmpty()) {
+            existing.setEmail(updatedUser.getEmail());
+        }
+        if (updatedUser.getFirstName() != null && !updatedUser.getFirstName().isEmpty()) {
+            existing.setFirstName(updatedUser.getFirstName());
+        }
+        if (updatedUser.getLastName() != null && !updatedUser.getLastName().isEmpty()) {
+            existing.setLastName(updatedUser.getLastName());
+        }
+
+        // Update password if provided
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            existing.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+        }
+
+        // Update roles if provided
+        if (updatedUser.getRoles() != null && !updatedUser.getRoles().isEmpty()) {
+            existing.setRoles(updatedUser.getRoles());
+        }
+
         userRepository.save(existing);
     }
 

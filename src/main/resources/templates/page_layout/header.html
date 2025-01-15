@@ -41,6 +41,12 @@
                         <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user me-2"></i>
                             <span sec:authentication="name"></span>
+                            <span th:if="${#authentication.principal instanceof T(gr.hua.dit.rentalapp.entities.Tenant)}" 
+                                  th:with="tenant=${#authentication.principal}"
+                                  th:class="${tenant.backgroundCheckCleared ? 'badge bg-primary ms-2' : 'badge bg-danger ms-2'}"
+                                  th:title="${tenant.backgroundCheckCleared ? 'Verified Account' : 'Unverified Account'}">
+                                <i th:class="${tenant.backgroundCheckCleared ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'}"></i>
+                            </span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li><a class="dropdown-item" href="/profile/edit"><i class="fas fa-user-edit me-2"></i>Edit Profile</a></li>
