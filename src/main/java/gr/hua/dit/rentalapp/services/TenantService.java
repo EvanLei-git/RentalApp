@@ -31,18 +31,25 @@ public class TenantService {
     }
 
     public void updateTenant(Long id, Tenant tenantDetails) {
-        Tenant existing = tenantRepository.findById(id).orElse(null);
-        if (existing == null) {
-            throw new RuntimeException("Tenant not found: " + id);
+        Tenant existing = tenantRepository.findById(id).orElseThrow(() -> new RuntimeException("Tenant not found: " + id));
+
+        // Update fields if provided (null-safe updates)
+        if (tenantDetails.getEmail() != null) {
+            existing.setEmail(tenantDetails.getEmail());
         }
-        // Update fields
-        existing.setEmail(tenantDetails.getEmail());
-        existing.setEmploymentStatus(tenantDetails.getEmploymentStatus());
-        existing.setMonthlyIncome(tenantDetails.getMonthlyIncome());
-        existing.setBackgroundCheckCleared(tenantDetails.isBackgroundCheckCleared());
-        // Possibly update password or roles
+        if (tenantDetails.getEmploymentStatus() != null) {
+            existing.setEmploymentStatus(tenantDetails.getEmploymentStatus());
+        }
+        if (tenantDetails.getMonthlyIncome() != null) {
+            existing.setMonthlyIncome(tenantDetails.getMonthlyIncome());
+        }
+        if (tenantDetails.isBackgroundCheckCleared() != existing.isBackgroundCheckCleared()) {
+            existing.setBackgroundCheckCleared(tenantDetails.isBackgroundCheckCleared());
+        }
+        // Save updated tenant
         tenantRepository.save(existing);
     }
+
 
     public void deleteTenant(Long id) {
         tenantRepository.deleteById(id);

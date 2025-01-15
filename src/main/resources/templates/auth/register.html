@@ -92,96 +92,158 @@
         .login-link a:hover {
             text-decoration: underline;
         }
+        .tenant-fields {
+            display: none;
+        }
+        .upload-group {
+            margin-top: 0.5rem;
+        }
+        .upload-group small {
+            display: block;
+            color: #666;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 <body>
-    <div class="register-container">
-        <div class="header">
-            <h1>RentalApp</h1>
-            <p>Create your account</p>
-        </div>
-        
-        <form id="registerForm" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <label for="firstName">First Name</label>
-                <input type="text" id="firstName" name="firstName" required minlength="2" maxlength="50">
-            </div>
-            
-            <div class="form-group">
-                <label for="lastName">Last Name</label>
-                <input type="text" id="lastName" name="lastName" required minlength="2" maxlength="50">
-            </div>
-            
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select id="role" name="role" required>
-                    <option value="TENANT">Tenant</option>
-                    <option value="LANDLORD">Landlord</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="register-btn">Create Account</button>
-            
-            <div id="errorMessage" class="error-message"></div>
-        </form>
-        
-        <div class="login-link">
-            <p>Already have an account? <a href="/login">Login here</a></p>
-        </div>
+<div class="register-container">
+    <div class="header">
+        <h1>RentalApp</h1>
+        <p>Create your account</p>
     </div>
 
-    <script>
-        async function handleRegister(event) {
-            event.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-            const role = document.getElementById('role').value;
-            const errorMessage = document.getElementById('errorMessage');
-            
-            try {
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username,
-                        email,
-                        password,
-                        firstName,
-                        lastName,
-                        role
-                    })
-                });
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
-                // Registration successful
-                window.location.href = '/login';
-            } catch (error) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = error.message || 'Registration failed. Please try again.';
-            }
+    <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" required minlength="2" maxlength="50">
+        </div>
+
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" required minlength="2" maxlength="50">
+        </div>
+
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" name="role" required onchange="toggleTenantFields()">
+                <option value="TENANT">Tenant</option>
+                <option value="LANDLORD">Landlord</option>
+            </select>
+        </div>
+
+        <!-- Tenant-specific fields -->
+        <div id="tenantFields" class="tenant-fields">
+            <div class="form-group">
+                <label for="monthlyIncome">Monthly Income</label>
+                <input type="number" id="monthlyIncome" name="monthlyIncome" placeholder="Optional">
+            </div>
+            <div class="form-group">
+                <label for="employmentStatus">Employment Status</label>
+                <input type="text" id="employmentStatus" name="employmentStatus" placeholder="Optional">
+            </div>
+            <div class="form-group">
+                <label>Identity Documents (Optional)</label>
+                <div class="upload-group">
+                    <input type="file" id="idFront" name="idFront" accept="image/*">
+                    <small>Front of ID</small>
+                </div>
+                <div class="upload-group">
+                    <input type="file" id="idBack" name="idBack" accept="image/*">
+                    <small>Back of ID</small>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="register-btn">Create Account</button>
+
+        <div id="errorMessage" class="error-message"></div>
+    </form>
+
+    <div class="login-link">
+        <p>Already have an account? <a href="/login">Login here</a></p>
+    </div>
+</div>
+
+<script>
+    function toggleTenantFields() {
+        const role = document.getElementById('role').value;
+        const tenantFields = document.getElementById('tenantFields');
+        tenantFields.style.display = role === 'TENANT' ? 'block' : 'none';
+    }
+
+    async function handleRegister(event) {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append('username', document.getElementById('username').value);
+        formData.append('email', document.getElementById('email').value);
+        formData.append('password', document.getElementById('password').value);
+        formData.append('firstName', document.getElementById('firstName').value);
+        formData.append('lastName', document.getElementById('lastName').value);
+        formData.append('role', document.getElementById('role').value);
+
+        const monthlyIncome = document.getElementById('monthlyIncome').value;
+        if (monthlyIncome) {
+            formData.append('monthlyIncome', monthlyIncome);
         }
-    </script>
+
+        const employmentStatus = document.getElementById('employmentStatus').value;
+        if (employmentStatus) {
+            formData.append('employmentStatus', employmentStatus);
+        }
+
+        const idFront = document.getElementById('idFront').files[0];
+        const idBack = document.getElementById('idBack').files[0];
+        
+        if (idFront) {
+            formData.append('idFront', idFront);
+        }
+        if (idBack) {
+            formData.append('idBack', idBack);
+        }
+
+        const errorMessage = document.getElementById('errorMessage');
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Registration failed. Please try again.');
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+            }
+
+            // Redirect to the login page
+            window.location.href = '/login';
+        } catch (error) {
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = error.message || 'Registration failed. Please try again.';
+        }
+    }
+</script>
 </body>
 </html>

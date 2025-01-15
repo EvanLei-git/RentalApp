@@ -14,10 +14,11 @@ public class Tenant extends User {
     @JoinColumn(name = "verified_by_id") // refering to the Administrator id that verified the tenant
     private Administrator verifiedBy;
 
-    @NotBlank
+
     private String employmentStatus;
 
-    private double monthlyIncome;
+    private Double monthlyIncome;
+
 
     private boolean backgroundCheckCleared;
 
@@ -35,7 +36,7 @@ public class Tenant extends User {
         super();
     }
 
-    public Tenant(String username, String email, String password, String employmentStatus, double monthlyIncome) {
+    public Tenant(String username, String email, String password, String employmentStatus, Double monthlyIncome) {
         super(username, email, password);
         this.employmentStatus = employmentStatus;
         this.monthlyIncome = monthlyIncome;
@@ -51,7 +52,7 @@ public class Tenant extends User {
         this.employmentStatus = employmentStatus;
     }
 
-    public double getMonthlyIncome() {
+    public Double getMonthlyIncome() {
         return monthlyIncome;
     }
 

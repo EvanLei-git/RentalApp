@@ -65,9 +65,9 @@ public class UserAuthService implements UserDetailsService {
      * Register a new user with the given credentials and role name.
      */
     @Transactional
-    public void register(String username, String email, String rawPassword, String firstName, String lastName, String roleString) {
+    public void register(String username, String email, String rawPassword, String firstName, String lastName, String roleString, Double monthlyIncome, String employmentStatus) {
         System.out.println("Attempting to register user: " + username + " with role: " + roleString);
-        
+
         // Validate inputs
         validateRegistrationInput(username, email, rawPassword, firstName, lastName, roleString);
 
@@ -78,7 +78,7 @@ public class UserAuthService implements UserDetailsService {
         }
 
         // Create appropriate user type based on role
-        User user = createUserByRole(username, email, rawPassword, roleString);
+        User user = createUserByRole(username, email, rawPassword, roleString, monthlyIncome, employmentStatus);
 
         // Set first and last name
         user.setFirstName(firstName);
@@ -93,6 +93,7 @@ public class UserAuthService implements UserDetailsService {
         userRepository.save(user);
         System.out.println("Successfully registered user: " + username);
     }
+
 
     /**
      * Authenticate user and return login response.
@@ -174,7 +175,7 @@ public class UserAuthService implements UserDetailsService {
         }
     }
 
-    private User createUserByRole(String username, String email, String rawPassword, String roleString) {
+    private User createUserByRole(String username, String email, String rawPassword, String roleString, Double monthlyIncome, String employmentStatus) {
         User user;
         switch (roleString.toUpperCase()) {
             case "TENANT":
@@ -182,8 +183,8 @@ public class UserAuthService implements UserDetailsService {
                 tenant.setUsername(username);
                 tenant.setEmail(email);
                 tenant.setPassword(passwordEncoder.encode(rawPassword));
-                tenant.setEmploymentStatus("Not Specified"); // Default value
-                tenant.setMonthlyIncome(0.0); // Default value
+                tenant.setEmploymentStatus(employmentStatus != null ? employmentStatus : "Not Specified"); // Default value
+                tenant.setMonthlyIncome(monthlyIncome != null ? monthlyIncome : 0.0); // Default value
                 user = tenant;
                 break;
             case "LANDLORD":
@@ -205,6 +206,7 @@ public class UserAuthService implements UserDetailsService {
         }
         return user;
     }
+
 
     public void logout() {
         // TODO: Invalidate session
