@@ -1,0 +1,203 @@
+.dashboard-content {
+    padding: 40px 20px;
+    margin-top: 56px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 56px);
+}
+
+/* Filter Card Styles */
+.filter-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.filter-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+.filter-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.filter-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.filter-section {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.filter-section:last-child {
+    border-bottom: none;
+}
+
+.filter-title {
+    color: #1e3c72;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Status Label Styles */
+.status-label {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.status-label.pending {
+    color: #f39c12;
+}
+
+.status-label.approved {
+    color: #2ecc71;
+}
+
+.status-label.rejected {
+    color: #e74c3c;
+}
+
+.status-label.requested {
+    color: #3498db;
+}
+
+.status-label.scheduled {
+    color: #9b59b6;
+}
+
+.status-label.canceled {
+    color: #95a5a6;
+}
+
+.status-label.completed {
+    color: #27ae60;
+}
+
+/* Content Card Styles */
+.content-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    height: calc(100vh - 136px);
+    display: flex;
+    flex-direction: column;
+}
+
+.content-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.content-header h2 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.header-actions .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* Custom Button Styles */
+.btn-check:checked + .btn-outline-primary {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-color: transparent;
+}
+
+.btn-outline-primary {
+    color: #1e3c72;
+    border-color: #1e3c72;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-color: transparent;
+}
+
+/* Input Group Styles */
+.input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+}
+
+.input-group .form-control {
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-color: #ced4da;
+    box-shadow: none;
+}
+
+/* Date Input Styles */
+.date-input-group {
+    position: relative;
+}
+
+.date-input-group .input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+    color: #1e3c72;
+}
+
+.custom-date-input {
+    border-left: none;
+    background-color: white;
+    cursor: pointer;
+}
+
+.custom-date-input::-webkit-calendar-picker-indicator {
+    background: transparent;
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    color: transparent;
+    opacity: 0;
+}
+
+.custom-date-input:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
