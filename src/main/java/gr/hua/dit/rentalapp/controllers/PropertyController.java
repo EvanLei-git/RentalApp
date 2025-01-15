@@ -190,7 +190,7 @@ public class PropertyController {
         // Add authentication information
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("TENANT"))) {
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TENANT"))) {
             mav.addObject("isTenant", true);
         } else {
             mav.addObject("isTenant", false);

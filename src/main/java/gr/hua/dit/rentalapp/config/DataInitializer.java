@@ -47,81 +47,78 @@ public class DataInitializer implements CommandLineRunner {
 
         // Create test users if database is empty
         if (propertyRepository.count() == 0) {
-            // Create test tenant
-            Tenant testTenant = tenantRepository.findByUsername("testtenant")
-                    .orElseGet(() -> {
-                        Tenant tenant = new Tenant();
-                        tenant.setUsername("testtenant");
-                        tenant.setEmail("testtenant@example.com");
-                        tenant.setPassword(passwordEncoder.encode("test"));
-                        tenant.setFirstName("Test");
-                        tenant.setLastName("Tenant");
-                        tenant.setEmploymentStatus("Employed");
-                        tenant.setMonthlyIncome(2000.0);
-                        Set<Role> roles = new HashSet<>();
-                        roles.add(roleRepository.findByName(RoleType.TENANT).orElseThrow()); // Use the persisted role
-                        tenant.setRoles(roles);
-                        return tenantRepository.save(tenant);
-                    });
+            try {
+                // Create test tenant
+                Tenant tenant = new Tenant();
+                tenant.setUsername("testtenant");
+                tenant.setEmail("testtenant@example.com");
+                tenant.setPassword(passwordEncoder.encode("test"));
+                tenant.setFirstName("Test");
+                tenant.setLastName("Tenant");
+                tenant.setEmploymentStatus("Employed");
+                tenant.setMonthlyIncome(2000.0);
+                tenant.setIdFrontImageOid(null);
+                tenant.setIdBackImageOid(null);
+                Set<Role> tenantRoles = new HashSet<>();
+                tenantRoles.add(roleRepository.findByName(RoleType.TENANT).orElseThrow());
+                tenant.setRoles(tenantRoles);
+                Tenant testTenant = tenantRepository.save(tenant);
 
-            // Create test landlord
-            Landlord testLandlord = landlordRepository.findByUsername("testlandlord")
-                    .orElseGet(() -> {
-                        Landlord landlord = new Landlord();
-                        landlord.setUsername("testlandlord");
-                        landlord.setEmail("testlandlord@example.com");
-                        landlord.setPassword(passwordEncoder.encode("test"));
-                        landlord.setFirstName("Test");
-                        landlord.setLastName("Landlord");
-                        Set<Role> roles = new HashSet<>();
-                        roles.add(roleRepository.findByName(RoleType.LANDLORD).orElseThrow()); // Use the persisted role
-                        landlord.setRoles(roles);
-                        return landlordRepository.save(landlord);
-                    });
+                // Create test landlord
+                Landlord landlord = new Landlord();
+                landlord.setUsername("testlandlord");
+                landlord.setEmail("testlandlord@example.com");
+                landlord.setPassword(passwordEncoder.encode("test"));
+                landlord.setFirstName("Test");
+                landlord.setLastName("Landlord");
+                Set<Role> landlordRoles = new HashSet<>();
+                landlordRoles.add(roleRepository.findByName(RoleType.LANDLORD).orElseThrow());
+                landlord.setRoles(landlordRoles);
+                Landlord testLandlord = landlordRepository.save(landlord);
 
-            // Create test admin
-            Administrator testAdmin = administratorRepository.findByUsername("testadmin")
-                    .orElseGet(() -> {
-                        Administrator admin = new Administrator();
-                        admin.setUsername("testadmin");
-                        admin.setEmail("testadmin@example.com");
-                        admin.setPassword(passwordEncoder.encode("test"));
-                        admin.setFirstName("Test");
-                        admin.setLastName("Admin");
-                        Set<Role> roles = new HashSet<>();
-                        roles.add(roleRepository.findByName(RoleType.ADMINISTRATOR).orElseThrow()); // Use the persisted role
-                        admin.setRoles(roles);
-                        return administratorRepository.save(admin);
-                    });
+                // Create test admin
+                Administrator admin = new Administrator();
+                admin.setUsername("testadmin");
+                admin.setEmail("testadmin@example.com");
+                admin.setPassword(passwordEncoder.encode("test"));
+                admin.setFirstName("Test");
+                admin.setLastName("Admin");
+                Set<Role> adminRoles = new HashSet<>();
+                adminRoles.add(roleRepository.findByName(RoleType.ADMINISTRATOR).orElseThrow());
+                admin.setRoles(adminRoles);
+                Administrator testAdmin = administratorRepository.save(admin);
 
-            // Create test properties
-            createTestProperty(testLandlord, "123 Main St", "Athens", "Greece", 
-                    PropertyType.APARTMENT, 800.0, 2, 1, 75.0, true, true, false, true,
-                    "Modern apartment in the heart of Athens");
+                // Create test properties
+                createTestProperty(testLandlord, "123 Main St", "Athens", "Greece", 
+                        PropertyType.APARTMENT, 800.0, 2, 1, 75.0, true, true, false, true,
+                        "Modern apartment in the heart of Athens");
 
-            createTestProperty(testLandlord, "456 Beach Road", "Thessaloniki", "Greece", 
-                    PropertyType.HOUSE, 1200.0, 3, 2, 120.0, true, false, true, true,
-                    "Spacious house with garden near the sea");
+                createTestProperty(testLandlord, "456 Beach Road", "Thessaloniki", "Greece", 
+                        PropertyType.HOUSE, 1200.0, 3, 2, 120.0, true, false, true, true,
+                        "Spacious house with garden near the sea");
 
-            createTestProperty(testLandlord, "789 Mountain View", "Patras", "Greece", 
-                    PropertyType.DUPLEX, 2000.0, 4, 3, 200.0, true, true, true, true,
-                    "Luxury duplex with panoramic views");
+                createTestProperty(testLandlord, "789 Mountain View", "Patras", "Greece", 
+                        PropertyType.DUPLEX, 2000.0, 4, 3, 200.0, true, true, true, true,
+                        "Luxury duplex with panoramic views");
 
-            createTestProperty(testLandlord, "321 City Center", "Athens", "Greece", 
-                    PropertyType.STUDIO, 500.0, 1, 1, 45.0, false, true, false, true,
-                    "Cozy studio in downtown Athens");
+                createTestProperty(testLandlord, "321 City Center", "Athens", "Greece", 
+                        PropertyType.STUDIO, 500.0, 1, 1, 45.0, false, true, false, true,
+                        "Cozy studio in downtown Athens");
 
-            createTestProperty(testLandlord, "654 Suburban Lane", "Heraklion", "Greece", 
-                    PropertyType.HOUSE, 1500.0, 3, 2, 150.0, true, true, true, false,
-                    "Family house in quiet neighborhood");
+                createTestProperty(testLandlord, "654 Suburban Lane", "Heraklion", "Greece", 
+                        PropertyType.HOUSE, 1500.0, 3, 2, 150.0, true, true, true, false,
+                        "Family house in quiet neighborhood");
 
-            createTestProperty(testLandlord, "987 Coastal Drive", "Volos", "Greece", 
-                    PropertyType.APARTMENT, 900.0, 2, 1, 80.0, true, false, false, true,
-                    "Sea view apartment with modern amenities");
+                createTestProperty(testLandlord, "987 Coastal Drive", "Volos", "Greece", 
+                        PropertyType.APARTMENT, 900.0, 2, 1, 80.0, true, false, false, true,
+                        "Sea view apartment with modern amenities");
 
-            createTestProperty(testLandlord, "147 Park Avenue", "Larissa", "Greece", 
-                    PropertyType.HOUSE, 1100.0, 3, 2, 130.0, true, true, true, true,
-                    "Beautiful house near central park");
+                createTestProperty(testLandlord, "147 Park Avenue", "Larissa", "Greece", 
+                        PropertyType.HOUSE, 1100.0, 3, 2, 130.0, true, true, true, true,
+                        "Beautiful house near central park");
+            } catch (Exception e) {
+                // Handle exception
+            }
         }
     }
 

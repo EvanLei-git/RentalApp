@@ -15,6 +15,9 @@ public class Landlord extends User {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Property> properties = new ArrayList<>();
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     // Constructors
     public Landlord() {
         super();
@@ -22,6 +25,11 @@ public class Landlord extends User {
 
     public Landlord(String username, String email, String password) {
         super(username, email, password);
+    }
+
+    public Landlord(String username, String email, String password, String phoneNumber) {
+        super(username, email, password);
+        this.phoneNumber = phoneNumber;
     }
 
     // Getters and Setters
@@ -39,5 +47,13 @@ public class Landlord extends User {
 
     public void setVerifiedBy(Administrator verifiedBy) {
         this.verifiedBy = verifiedBy;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }

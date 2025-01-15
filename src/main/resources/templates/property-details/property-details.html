@@ -161,6 +161,7 @@
 
         async function loadCurrentVisit() {
             try {
+
                 const propertyId = '[[${property.propertyId}]]';
                 const response = await fetch(`/api/visits/current-visit/${propertyId}?username=[[${#authentication.name}]]`);
                 if (response.ok) {
@@ -168,7 +169,8 @@
                     if (visit && visit.visitId) {
                         hasScheduledVisit = true;
                         currentVisitDateTime = visit.visitDate;
-                        updateScheduleButton();
+
+
                         // Show scheduled visit text
                         document.getElementById('scheduledVisitText').style.display = 'block';
                         document.getElementById('scheduledVisitTime').textContent = formatDateTime(visit.visitDate);
@@ -183,7 +185,7 @@
             const scheduleBtn = document.querySelector('.schedule-btn:not(#cancelVisitBtn)');
             const cancelBtn = document.getElementById('cancelVisitBtn');
             const scheduledVisitText = document.getElementById('scheduledVisitText');
-            
+
             if (hasScheduledVisit && currentVisitDateTime) {
                 scheduleBtn.innerHTML = '<i class="far fa-calendar-alt me-2"></i> Update Visit';
                 scheduleBtn.classList.remove('btn-primary');
@@ -251,27 +253,28 @@
             }
         }
 
-        async function loadCurrentVisit() {
-            try {
-                const propertyId = '[[${property.propertyId}]]';
-                const response = await fetch(`/api/visits/current-visit/${propertyId}?username=[[${#authentication.name}]]`);
-                if (response.ok) {
-                    const visit = await response.json();
-                    hasScheduledVisit = true;
-                    currentVisitDateTime = visit.visitDate;
-                    console.log('Loaded visit:', visit); // Debug log
-                    console.log('Current visit datetime:', currentVisitDateTime); // Debug log
-                    updateScheduleButton();
-                }
-            } catch (error) {
-                console.error('Error loading current visit:', error);
-            }
-        }
+        //async function loadCurrentVisit() {
+        //   try {
+        //        const propertyId = '[[${property.propertyId}]]';
+        //        const response = await fetch(`/api/visits/current-visit/${propertyId}?username=[[${#authentication.name}]]`);
+        //        if (response.ok) {
+        //            const visit = await response.json();
+        //            hasScheduledVisit = true;
+        //            currentVisitDateTime = visit.visitDate;
+        //            console.log('Loaded visit:', visit); // Debug log
+        //            console.log('Current visit datetime:', currentVisitDateTime); // Debug log
+        //            updateScheduleButton();
+        //        }
+        //    } catch (error) {
+        //        console.error('Error loading current visit:', error);
+        //    }
+        //}
 
         async function scheduleVisit() {
             const selectedDate = document.getElementById('calendar').value;
             const selectedTime = document.getElementById('visitTime').value;
-            
+
+
             if (!selectedDate || !selectedTime) {
                 await Swal.fire({
                     title: 'Error!',
@@ -363,22 +366,35 @@
                         visitDate: visitDateTime 
                     })
                 });
-
                 if (!response.ok) {
                     const errorData = await response.json();
-                    if (response.status === 400 && errorData.message === 'Visit already exists') {
-                        hasScheduledVisit = true;
-                        updateScheduleButton();
+                    if (errorData.error) {
+                        // Show the specific error message from the server
                         await Swal.fire({
-                            title: 'Visit Exists',
-                            text: 'You have already scheduled a visit for this property.',
-                            icon: 'info'
+                            title: 'Error!',
+                            text: errorData.error,
+                            icon: 'error'
                         });
                     } else {
                         throw new Error('Failed to schedule visit');
                     }
                     return;
                 }
+                // if (!response.ok) {
+                //     const errorData = await response.json();
+                //     if (response.status === 400 && errorData.message === 'Visit already exists') {
+                //         hasScheduledVisit = true;
+                //         updateScheduleButton();
+                //         await Swal.fire({
+                //             title: 'Visit Exists',
+                //             text: 'You have already scheduled a visit for this property.',
+                //             icon: 'info'
+                //         });
+                //     } else {
+                //         throw new Error('Failed to schedule visit');
+                //     }
+                //     return;
+                // }
 
                 const result = await response.json();
                 
@@ -427,6 +443,7 @@
 
         async function loadCurrentVisit() {
             try {
+
                 const propertyId = '[[${property.propertyId}]]';
                 const response = await fetch(`/api/visits/current-visit/${propertyId}?username=[[${#authentication.name}]]`);
                 if (response.ok) {
@@ -468,6 +485,7 @@
         }
 
         async function generateTimeOptions() {
+
             const select = document.getElementById('visitTime');
             select.innerHTML = '';
             
@@ -535,8 +553,9 @@
             // Load current visit if exists
             await loadCurrentVisit();
             
-            const today = new Date().toISOString().split('T')[0];
-            
+            const today = new Date().toLocaleDateString('en-CA');
+
+
             flatpickr("#calendar", {
                 inline: true,
                 minDate: "today",
@@ -576,29 +595,8 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            const scheduleBtn = document.querySelector('.schedule-btn[data-user-role]');
-            const rentBtn = document.querySelector('.rent-btn[data-user-role]');
+            loadCurrentVisit();
 
-            function checkTenantRole(button) {
-                if (button) {
-                    const userRole = button.getAttribute('data-user-role');
-                    if (userRole !== 'TENANT') {
-                        button.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            Swal.fire({
-                                title: 'Access Denied',
-                                text: 'You need to be logged in as a Tenant to access this feature',
-                                icon: 'warning',
-                                confirmButtonText: 'OK'
-                            });
-                        });
-                    }
-                }
-            }
-
-            checkTenantRole(scheduleBtn);
-            checkTenantRole(rentBtn);
         });
     </script>
 </body>

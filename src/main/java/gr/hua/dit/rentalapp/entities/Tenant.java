@@ -1,7 +1,9 @@
 package gr.hua.dit.rentalapp.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,18 +11,36 @@ import java.util.List;
 @Table(name = "tenants")
 public class Tenant extends User {
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by_id") // refering to the Administrator id that verified the tenant
     private Administrator verifiedBy;
 
-
-    private String employmentStatus;
-
+    @PositiveOrZero
+    @Column(name = "monthly_income")
     private Double monthlyIncome;
 
+    @Column(name = "employment_status")
+    private String employmentStatus;
 
-    private boolean backgroundCheckCleared;
+    @Column(name = "id_front_image_oid")
+    private Long idFrontImageOid;
+
+    @Column(name = "id_back_image_oid")
+    private Long idBackImageOid;
+
+    @Transient
+    private byte[] idFrontImage;
+
+    @Transient
+    private byte[] idBackImage;
+
+    private boolean backgroundCheckCleared = false;
+
+    @Column(name = "is_verified")
+    private boolean verified = false;
+
+    @Column(name = "pending_verification")
+    private boolean pendingVerification = false;
 
     @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RentalApplication> submittedApplications = new ArrayList<>();
@@ -40,10 +60,17 @@ public class Tenant extends User {
         super(username, email, password);
         this.employmentStatus = employmentStatus;
         this.monthlyIncome = monthlyIncome;
-        this.backgroundCheckCleared = false; // Default value
     }
 
     // Getters and Setters
+    public Administrator getVerifiedBy() {
+        return verifiedBy;
+    }
+
+    public void setVerifiedBy(Administrator verifiedBy) {
+        this.verifiedBy = verifiedBy;
+    }
+
     public String getEmploymentStatus() {
         return employmentStatus;
     }
@@ -56,8 +83,40 @@ public class Tenant extends User {
         return monthlyIncome;
     }
 
-    public void setMonthlyIncome(double monthlyIncome) {
+    public void setMonthlyIncome(Double monthlyIncome) {
         this.monthlyIncome = monthlyIncome;
+    }
+
+    public Long getIdFrontImageOid() {
+        return idFrontImageOid;
+    }
+
+    public void setIdFrontImageOid(Long idFrontImageOid) {
+        this.idFrontImageOid = idFrontImageOid;
+    }
+
+    public Long getIdBackImageOid() {
+        return idBackImageOid;
+    }
+
+    public void setIdBackImageOid(Long idBackImageOid) {
+        this.idBackImageOid = idBackImageOid;
+    }
+
+    public byte[] getIdFrontImage() {
+        return idFrontImage;
+    }
+
+    public void setIdFrontImage(byte[] idFrontImage) {
+        this.idFrontImage = idFrontImage;
+    }
+
+    public byte[] getIdBackImage() {
+        return idBackImage;
+    }
+
+    public void setIdBackImage(byte[] idBackImage) {
+        this.idBackImage = idBackImage;
     }
 
     public boolean isBackgroundCheckCleared() {
@@ -66,6 +125,22 @@ public class Tenant extends User {
 
     public void setBackgroundCheckCleared(boolean backgroundCheckCleared) {
         this.backgroundCheckCleared = backgroundCheckCleared;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public boolean isPendingVerification() {
+        return pendingVerification;
+    }
+
+    public void setPendingVerification(boolean pendingVerification) {
+        this.pendingVerification = pendingVerification;
     }
 
     public List<RentalApplication> getSubmittedApplications() {
@@ -82,12 +157,5 @@ public class Tenant extends User {
 
     public void setViewedProperties(List<Property> viewedProperties) {
         this.viewedProperties = viewedProperties;
-    }
-    public Administrator getVerifiedBy() {
-        return verifiedBy;
-    }
-
-    public void setVerifiedBy(Administrator verifiedBy) {
-        this.verifiedBy = verifiedBy;
     }
 }

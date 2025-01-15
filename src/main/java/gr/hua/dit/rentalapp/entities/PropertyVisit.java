@@ -1,9 +1,9 @@
 package gr.hua.dit.rentalapp.entities;
 
-
 import jakarta.persistence.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-
 
 import gr.hua.dit.rentalapp.enums.VisitStatus;
 
@@ -27,11 +27,20 @@ public class PropertyVisit {
     @JoinColumn(name = "landlord_id", nullable = false)
     private Landlord landlord;
 
-    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "visit_date")
     private Date visitDate;
 
+    @Column(name = "visit_status")
     @Enumerated(EnumType.STRING)
     private VisitStatus visitStatus;
+
+    @Column(name = "status_created_at", updatable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date statusCreatedAt;
+
+    @Column(name = "status_updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date statusUpdatedAt;
 
     // Constructors
     public PropertyVisit() {
@@ -43,6 +52,18 @@ public class PropertyVisit {
         this.landlord = landlord;
         this.visitDate = visitDate;
         this.visitStatus = visitStatus;
+    }
+
+    // Factory method for creating a visit request
+    public static PropertyVisit createVisitRequest(Long propertyId, String visitDateStr) throws ParseException {
+        PropertyVisit visit = new PropertyVisit();
+        Property property = new Property();
+        property.setPropertyId(propertyId);
+        visit.setProperty(property);
+        
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+        visit.setVisitDate(dateFormat.parse(visitDateStr));
+        return visit;
     }
 
     // Getters and Setters
@@ -92,5 +113,28 @@ public class PropertyVisit {
 
     public void setVisitStatus(VisitStatus visitStatus) {
         this.visitStatus = visitStatus;
+    }
+
+    public Date getStatusCreatedAt() {
+        return statusCreatedAt;
+    }
+
+    public Date getStatusUpdatedAt() {
+        return statusUpdatedAt;
+    }
+
+    public void setStatusUpdatedAt(Date statusUpdatedAt) {
+        this.statusUpdatedAt = statusUpdatedAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        statusCreatedAt = new Date();
+        statusUpdatedAt = new Date();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        statusUpdatedAt = new Date();
     }
 }

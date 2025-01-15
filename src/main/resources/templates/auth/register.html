@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentalApp - Register</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,8 +23,17 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
+            position: relative;
+            min-height: 400px;
+            transition: min-height 0.5s ease;
+            overflow: hidden;
         }
+
+        .register-container.expanded {
+            min-height: 800px;
+        }
+
         .header {
             text-align: center;
             margin-bottom: 2rem;
@@ -39,22 +48,76 @@
             color: #666;
             font-size: 1.1rem;
         }
+        .role-selection-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.5s ease;
+        }
+
+        .role-selection-container.hidden {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            display: none;
+        }
+
+        .role-selection {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .role-btn {
+            flex: 1;
+            padding: 2rem;
+            border: 2px solid #1e3c72;
+            border-radius: 8px;
+            background: white;
+            color: #1e3c72;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .role-btn i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .role-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: #1e3c72;
+            color: white;
+        }
+        .form-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 0;
         }
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
             color: #374151;
+            font-weight: 500;
         }
-        .form-control {
+        .form-group input {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.75rem;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             box-sizing: border-box;
         }
-        .btn-register {
+        .register-btn, .verify-btn {
             width: 100%;
             padding: 0.75rem;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -66,8 +129,19 @@
             font-weight: 600;
             transition: opacity 0.2s ease;
         }
-        .btn-register:hover {
-            opacity: 0.9;
+        .verify-btn {
+            background: white;
+            color: #1e3c72;
+            border: 1px solid #1e3c72;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .register-btn {
+            margin-top: 0;
         }
         .error-message {
             color: #dc2626;
@@ -86,189 +160,636 @@
         .login-link a:hover {
             text-decoration: underline;
         }
-        .verification-status {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
+        .registration-form {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 2.5rem;
+            background: white;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateX(100%);
+            pointer-events: none;
+            display: none;
+        }
+
+        .registration-form.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .registration-form .form-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: none;
+            border: none;
+            color: #1e3c72;
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateX(-3px);
+        }
+
+        .verification-form {
+            text-align: left;
+            padding: 1rem;
+        }
+        .verification-form .form-group:last-child {
+            margin-bottom: 0;
+        }
+        /* Verification Popup Styles */
+
+        .verification-popup .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        
+        .verification-popup .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
             font-weight: 500;
-            margin-left: 0.5rem;
+            font-size: 0.9rem;
         }
-        .verification-status.verified {
-            background-color: #e6f3ff;
-            color: #0066cc;
+
+        /* SweetAlert2 Styles */
+        .swal2-popup {
+            border-radius: 12px;
+            padding: 2rem;
+            width: 32em;
         }
-        .verification-status.unverified {
-            background-color: #ffe6e6;
-            color: #cc0000;
+        .swal2-title {
+            color: #1e3c72 !important;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+        .swal2-html-container {
+            margin: 1rem 0 !important;
+        }
+
+        .verification-popup .swal2-input,
+        .verification-popup .swal2-file {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .swal2-confirm-btn,
+        .swal2-cancel-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+            margin: 0;
+        }
+
+        .swal2-cancel-btn {
+            background: white;
+            color: #1e3c72;
+            border: 1px solid #1e3c72;
+        }
+
+        .verification-form {
+            text-align: left;
+        }
+        .verification-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .verification-form label {
+            display: block;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .verification-form input[type="number"],
+        .verification-form input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .verification-form .file-note {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        .verification-form .file-error {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .swal2-confirm-btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            color: white !important;
+            padding: 0.75rem 1.5rem !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+        }
+        .swal2-cancel-btn {
+            background: white !important;
+            color: #1e3c72 !important;
+            border: 1px solid #1e3c72 !important;
+            padding: 0.75rem 1.5rem !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+        }
+
+        .loading-popup .swal2-html-container {
+            margin: 2rem 0 !important;
+        }
+        .loading-content {
+            text-align: center;
+        }
+        .loading-content i {
+            color: #1e3c72;
+            margin-bottom: 1rem;
+        }
+        .loading-content p {
+            margin: 0.5rem 0;
+            color: #374151;
+        }
+        .loading-note {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-style: italic;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <div class="register-container">
-        <div class="header">
-            <h1>RentalApp</h1>
-            <p>Create your account</p>
-        </div>
-        <form id="registerForm" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="firstName">First Name</label>
-                <input type="text" id="firstName" name="firstName" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="lastName">Last Name</label>
-                <input type="text" id="lastName" name="lastName" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select id="role" name="role" class="form-control" onchange="toggleVerifyButton()" required>
-                    <option value="">Select role...</option>
-                    <option value="TENANT">Tenant</option>
-                    <option value="LANDLORD">Landlord</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn-register mb-3">Register</button>
-            <button type="button" id="verifyBtn" class="btn btn-success w-100 mb-3" style="display: none;" 
-                    data-bs-toggle="modal" data-bs-target="#verifyModal">
-                <i class="fas fa-user-check me-2"></i>Verify Account
+<div class="register-container">
+    <div class="header">
+        <h1>RentalApp</h1>
+        <p>Choose your role to get started</p>
+    </div>
+
+    <div class="role-selection-container">
+        <div class="role-selection">
+            <button type="button" class="role-btn" onclick="selectRole('tenant')">
+                <i class="fas fa-user"></i>
+                Tenant
+                <small>Looking for a place to rent</small>
             </button>
-            
-            <div class="login-link">
-                Already have an account? <a href="/login">Login here</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Verification Modal -->
-    <div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="verifyModalLabel">
-                        <i class="fas fa-user-check me-2"></i>Verify Your Account
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="verificationForm">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="monthlyIncome" class="form-label">Monthly Income</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control" id="monthlyIncome" 
-                                       name="monthlyIncome" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="employmentStatus" class="form-label">Employment Status</label>
-                            <select class="form-select" id="employmentStatus" name="employmentStatus" required>
-                                <option value="">Select status...</option>
-                                <option value="EMPLOYED">Employed</option>
-                                <option value="SELF_EMPLOYED">Self Employed</option>
-                                <option value="STUDENT">Student</option>
-                                <option value="RETIRED">Retired</option>
-                                <option value="UNEMPLOYED">Unemployed</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="identityDocument" class="form-label">Identity Document</label>
-                            <input type="file" class="form-control" id="identityDocument" 
-                                   name="identityDocument" accept="image/*,.pdf" required>
-                            <small class="text-muted">Upload a photo ID or passport (PDF or image)</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-2"></i>Later
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-check me-2"></i>Submit Verification
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <button type="button" class="role-btn" onclick="selectRole('landlord')">
+                <i class="fas fa-home"></i>
+                Landlord
+                <small>Have properties to rent</small>
+            </button>
+        </div>
+        <div class="login-link">
+            <p>Already have an account? <a href="/login">Login here</a></p>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function toggleVerifyButton() {
-            const role = document.getElementById('role').value;
-            const verifyBtn = document.getElementById('verifyBtn');
-            verifyBtn.style.display = role === 'TENANT' ? 'block' : 'none';
-        }
+    <!-- Tenant Registration Form -->
+    <form id="tenantForm" class="registration-form" onsubmit="handleRegister(event, 'tenant')">
+        <button type="button" class="back-btn" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="header">
+            <h2>Tenant Registration</h2>
+        </div>
 
-        async function handleRegister(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const data = {
-                username: formData.get('username'),
-                email: formData.get('email'),
-                password: formData.get('password'),
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                role: formData.get('role')
-            };
+        <div class="form-content">
+            <div class="form-group">
+                <label for="tenant-firstName">First Name</label>
+                <input type="text" id="tenant-firstName" name="firstName" required minlength="2" maxlength="50">
+            </div>
 
-            try {
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
+            <div class="form-group">
+                <label for="tenant-lastName">Last Name</label>
+                <input type="text" id="tenant-lastName" name="lastName" required minlength="2" maxlength="50">
+            </div>
 
-                if (response.ok) {
-                    window.location.href = '/login?registered=true';
-                } else {
-                    const error = await response.text();
-                    document.querySelector('.error-message').textContent = error;
-                    document.querySelector('.error-message').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-                document.querySelector('.error-message').textContent = 'An error occurred during registration';
-                document.querySelector('.error-message').style.display = 'block';
-            }
-        }
+            <div class="form-group">
+                <label for="tenant-username">Username</label>
+                <input type="text" id="tenant-username" name="username" required>
+            </div>
 
-        document.getElementById('verificationForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const formData = new FormData(this);
+            <div class="form-group">
+                <label for="tenant-email">Email</label>
+                <input type="email" id="tenant-email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="tenant-password">Password</label>
+                <input type="password" id="tenant-password" name="password" required>
+            </div>
+
+            <button type="button" class="verify-btn" onclick="showVerificationPopup()">
+                <i class="fas fa-shield-alt"></i> Add Verification Details
+            </button>
+            <button type="submit" class="register-btn">Create Account</button>
+        </div>
+    </form>
+
+    <!-- Landlord Registration Form -->
+    <form id="landlordForm" class="registration-form" onsubmit="handleRegister(event, 'landlord')">
+        <button type="button" class="back-btn" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="header">
+            <h2>Landlord Registration</h2>
+        </div>
+
+        <div class="form-content">
+            <div class="form-group">
+                <label for="landlord-firstName">First Name</label>
+                <input type="text" id="landlord-firstName" name="firstName" required minlength="2" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="landlord-lastName">Last Name</label>
+                <input type="text" id="landlord-lastName" name="lastName" required minlength="2" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="landlord-username">Username</label>
+                <input type="text" id="landlord-username" name="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="landlord-email">Email</label>
+                <input type="email" id="landlord-email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="landlord-password">Password</label>
+                <input type="password" id="landlord-password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" required>
+            </div>
+
+            <button type="submit" class="register-btn">Create Account</button>
+        </div>
+    </form>
+
+    <div id="errorMessage" class="error-message"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let verificationData = {
+        monthlyIncome: '',
+        employmentStatus: '',
+        idFront: null,
+        idBack: null
+    };
+
+    async function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
             
-            try {
-                const response = await fetch('/api/auth/verify-tenant', {
-                    method: 'POST',
-                    body: formData
-                });
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Calculate new dimensions while maintaining aspect ratio
+                    const maxDimension = 1024; // Max width or height
+                    if (width > height && width > maxDimension) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else if (height > maxDimension) {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Maintain original format
+                    const mimeType = file.type;
+                    const quality = mimeType === 'image/png' ? 0.7 : 0.6; // PNG uses different quality scale
+                    
+                    // Convert to Blob maintaining original format
+                    canvas.toBlob((blob) => {
+                        resolve(new File([blob], file.name, {
+                            type: mimeType,
+                            lastModified: Date.now()
+                        }));
+                    }, mimeType, quality);
+                };
+                
+                img.onerror = (error) => {
+                    reject(error);
+                };
+            };
+            
+            reader.onerror = (error) => {
+                reject(error);
+            };
+        });
+    }
 
-                if (response.ok) {
-                    window.location.href = '/login?verified=true';
-                } else {
-                    const error = await response.text();
-                    alert('Verification failed: ' + error);
+    function validateFileSize(input) {
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        const errorDiv = document.getElementById(input.id + 'Error');
+        
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            if (file.size > maxSize) {
+                errorDiv.textContent = 'File size exceeds 2MB limit';
+                errorDiv.style.display = 'block';
+                input.value = '';
+                return false;
+            }
+            
+            if (input.id === 'idFront' || input.id === 'idBack') {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    errorDiv.textContent = 'Please upload a JPEG or PNG image';
+                    errorDiv.style.display = 'block';
+                    input.value = '';
+                    return false;
                 }
-            } catch (error) {
-                console.error('Verification error:', error);
-                alert('An error occurred during verification');
+            }
+            
+            errorDiv.style.display = 'none';
+            return true;
+        }
+        return true;
+    }
+
+    async function showVerificationPopup() {
+        const { value: formValues } = await Swal.fire({
+            title: 'Tenant Verification',
+            html: `
+                <div class="verification-form">
+                    <div class="form-group">
+                        <label for="monthlyIncome">Monthly Income</label>
+                        <input type="number" id="monthlyIncome" class="swal2-input" 
+                               placeholder="Enter your monthly income" 
+                               value="${verificationData.monthlyIncome || ''}"
+                               min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="employmentStatus">Employment Status</label>
+                        <input type="text" id="employmentStatus" class="swal2-input" 
+                               placeholder="Enter your employment status"
+                               value="${verificationData.employmentStatus || ''}"
+                               maxlength="50">
+                        <div class="file-note">
+                            Example: Full-time Employee, Student, Self-Employed, etc.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="idFront">ID Front Image</label>
+                        <input type="file" id="idFront" class="swal2-file" 
+                               accept=".jpg,.jpeg,.png" 
+                               onchange="validateFileSize(this)">
+                        <div class="file-note">Upload front side of your ID (JPEG or PNG format, max 2MB)</div>
+                        <div id="idFrontError" class="file-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="idBack">ID Back Image</label>
+                        <input type="file" id="idBack" class="swal2-file" 
+                               accept=".jpg,.jpeg,.png" 
+                               onchange="validateFileSize(this)">
+                        <div class="file-note">Upload back side of your ID (JPEG or PNG format, max 2MB)</div>
+                        <div id="idBackError" class="file-error"></div>
+                    </div>
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Submit',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                confirmButton: 'swal2-confirm-btn',
+                cancelButton: 'swal2-cancel-btn',
+                popup: 'verification-popup'
+            },
+            buttonsStyling: false,
+            preConfirm: async () => {
+                const monthlyIncome = document.getElementById('monthlyIncome').value;
+                const employmentStatus = document.getElementById('employmentStatus').value;
+                const idFrontFile = document.getElementById('idFront').files[0];
+                const idBackFile = document.getElementById('idBack').files[0];
+
+                if (!monthlyIncome || !employmentStatus) {
+                    Swal.showValidationMessage('Please fill in all required fields');
+                    return false;
+                }
+
+                try {
+                    // Store form data before compression
+                    const formData = {
+                        monthlyIncome: parseFloat(monthlyIncome),
+                        employmentStatus: employmentStatus,
+                        idFront: idFrontFile,
+                        idBack: idBackFile
+                    };
+
+                    // Compress images if they exist
+                    let compressedFront = null;
+                    let compressedBack = null;
+
+                    if (idFrontFile) {
+                        compressedFront = await compressImage(idFrontFile);
+                    }
+                    if (idBackFile) {
+                        compressedBack = await compressImage(idBackFile);
+                    }
+
+                    return {
+                        ...formData,
+                        idFront: compressedFront,
+                        idBack: compressedBack
+                    };
+                } catch (error) {
+                    console.error('Error processing files:', error);
+                    Swal.showValidationMessage(`Error processing files: ${error.message}`);
+                    return false;
+                }
             }
         });
-    </script>
+
+        if (formValues) {
+            verificationData = formValues;
+            await Swal.fire({
+                icon: 'success',
+                title: 'Verification Details Added',
+                text: 'You can now complete your registration',
+                customClass: {
+                    confirmButton: 'swal2-confirm-btn'
+                },
+                buttonsStyling: false
+            });
+            return true;
+        }
+        return false;
+    }
+
+    function selectRole(role) {
+        document.querySelector('.role-selection-container').classList.add('hidden');
+        document.querySelector('.register-container').classList.add('expanded');
+        
+        setTimeout(() => {
+            const selectedForm = document.getElementById(`${role}Form`);
+            selectedForm.style.display = 'flex';
+            setTimeout(() => {
+                selectedForm.classList.add('active');
+            }, 50);
+        }, 300);
+    }
+
+    function goBack() {
+        document.querySelectorAll('.registration-form').forEach(form => {
+            form.classList.remove('active');
+        });
+        document.querySelector('.register-container').classList.remove('expanded');
+        
+        setTimeout(() => {
+            document.querySelector('.role-selection-container').classList.remove('hidden');
+            setTimeout(() => {
+                document.querySelectorAll('.registration-form').forEach(form => {
+                    form.style.display = 'none';
+                });
+            }, 500);
+        }, 300);
+    }
+
+    async function handleRegister(event, role) {
+        event.preventDefault();
+
+        // Show loading indicator
+        const loadingPopup = Swal.fire({
+            title: 'Processing Registration',
+            html: `
+                <div class="loading-content">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Please wait while we process your registration...</p>
+                    <p class="loading-note">This might take a few seconds</p>
+                </div>
+            `,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'loading-popup'
+            }
+        });
+
+        try {
+            const form = event.target;
+            const formData = new FormData(form);
+            formData.append('role', role);
+
+            if (role === 'tenant' && !verificationData) {
+                loadingPopup.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Verification Required',
+                    text: 'Please add your verification details before registering',
+                    customClass: {
+                        confirmButton: 'swal2-confirm-btn'
+                    },
+                    buttonsStyling: false
+                });
+                return;
+            }
+
+            if (role === 'tenant') {
+                formData.append('monthlyIncome', verificationData.monthlyIncome);
+                formData.append('employmentStatus', verificationData.employmentStatus);
+                if (verificationData.idFront) {
+                    formData.append('idFrontImage', verificationData.idFront);
+                }
+                if (verificationData.idBack) {
+                    formData.append('idBackImage', verificationData.idBack);
+                }
+            }
+
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: formData
+            });
+
+            let result;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                result = await response.json();
+            } else {
+                const text = await response.text();
+                result = { message: text };
+            }
+
+            // Close loading indicator
+            loadingPopup.close();
+
+            if (response.ok) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Successful',
+                    text: 'You can now login with your credentials',
+                    customClass: {
+                        confirmButton: 'swal2-confirm-btn'
+                    },
+                    buttonsStyling: false
+                });
+                window.location.href = '/login';
+            } else {
+                throw new Error(result.message || 'Registration failed');
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            
+            // Close loading indicator if it's still open
+            if (loadingPopup) {
+                loadingPopup.close();
+            }
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Registration Failed',
+                text: error.message || 'An unexpected error occurred during registration',
+                customClass: {
+                    confirmButton: 'swal2-confirm-btn'
+                },
+                buttonsStyling: false
+            });
+        }
+    }
+</script>
 </body>
 </html>
