@@ -81,6 +81,11 @@ public class UserAuthService implements UserDetailsService {
         userRepository.deleteById(userId);
     }
 
+    @Transactional
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
     // Authentication Methods
     /**
      * Register a new user with the given credentials and role name.
