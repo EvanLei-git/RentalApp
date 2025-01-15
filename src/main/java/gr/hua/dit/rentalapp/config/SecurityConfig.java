@@ -53,11 +53,11 @@ public class SecurityConfig implements WebMvcConfigurer {
                 // Role-based access control
                 .requestMatchers("/api/tenant/**").hasRole("TENANT")
                 .requestMatchers("/api/landlord/**").hasRole("LANDLORD")
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
                 // Dashboard access
                 .requestMatchers("/dashboard").authenticated()
                 .requestMatchers("/api/properties/**").authenticated()
-                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/users/**").hasRole("ADMINISTRATOR")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

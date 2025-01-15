@@ -13,9 +13,9 @@
     <!-- Main Content -->
     <div class="dashboard-container" style="margin-top: 76px;">
         <!-- Dynamic dashboard content based on role -->
-        <div sec:authorize="hasAuthority('TENANT')" th:replace="~{dashboard/tenant-dashboard :: content}"></div>
-        <div sec:authorize="hasAuthority('LANDLORD')" th:replace="~{dashboard/landlord-dashboard :: content}"></div>
-        <div sec:authorize="hasAuthority('ADMINISTRATOR')" th:replace="~{dashboard/admin-dashboard :: content}"></div>
+        <div sec:authorize="hasRole('ROLE_TENANT')" th:replace="~{dashboard/tenant-dashboard :: content}"></div>
+        <div sec:authorize="hasRole('ROLE_LANDLORD')" th:replace="~{dashboard/landlord-dashboard :: content}"></div>
+        <div sec:authorize="hasRole('ROLE_ADMINISTRATOR')" th:replace="~{dashboard/admin-dashboard :: content}"></div>
     </div>
 
     <!-- Include Footer -->
@@ -26,8 +26,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <!-- Dynamic scripts based on role -->
-    <div sec:authorize="hasAuthority('TENANT')" th:replace="~{dashboard/tenant-dashboard :: scripts}"></div>
-    <div sec:authorize="hasAuthority('LANDLORD')" th:replace="~{dashboard/landlord-dashboard :: scripts}"></div>
-    <div sec:authorize="hasAuthority('ADMINISTRATOR')" th:replace="~{dashboard/admin-dashboard :: scripts}"></div>
+    <div sec:authorize="hasRole('ROLE_TENANT')" th:replace="~{dashboard/tenant-dashboard :: scripts}"></div>
+    <div sec:authorize="hasRole('ROLE_LANDLORD')" th:replace="~{dashboard/landlord-dashboard :: scripts}"></div>
+    <div sec:authorize="hasRole('ROLE_ADMINISTRATOR')" th:replace="~{dashboard/admin-dashboard :: scripts}"></div>
 </body>
 </html>

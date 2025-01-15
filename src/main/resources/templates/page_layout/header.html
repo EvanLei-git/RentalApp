@@ -19,10 +19,10 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/home" style="color: white !important;">Home</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasRole('OWNER')">
+                <li class="nav-item" sec:authorize="hasRole('ROLE_LANDLORD')">
                     <a class="nav-link" href="/properties/my-properties" style="color: white !important;">My Properties</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasRole('OWNER')">
+                <li class="nav-item" sec:authorize="hasRole('ROLE_LANDLORD')">
                     <a class="nav-link" href="/properties/add" style="color: white !important;">Add Property</a>
                 </li>
             </ul>
