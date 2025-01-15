@@ -1,8 +1,10 @@
 package gr.hua.dit.rentalapp.services;
 
 import gr.hua.dit.rentalapp.entities.RentalApplication;
+import gr.hua.dit.rentalapp.entities.Tenant;
 import gr.hua.dit.rentalapp.enums.ApplicationStatus;
 import gr.hua.dit.rentalapp.repositories.RentalApplicationRepository;
+import gr.hua.dit.rentalapp.repositories.TenantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,10 +14,12 @@ import java.util.List;
 public class RentalApplicationService {
 
     private final RentalApplicationRepository applicationRepository;
+    private final TenantRepository tenantRepository;
 
     @Autowired
-    public RentalApplicationService(RentalApplicationRepository applicationRepository) {
+    public RentalApplicationService(RentalApplicationRepository applicationRepository, TenantRepository tenantRepository) {
         this.applicationRepository = applicationRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     public List<RentalApplication> getAllApplications() {
@@ -43,5 +47,11 @@ public class RentalApplicationService {
 
     public void deleteApplication(Long id) {
         applicationRepository.deleteById(id);
+    }
+
+    public List<RentalApplication> getApplicationsByTenant(String username) {
+        Tenant tenant = tenantRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Tenant not found"));
+        return applicationRepository.findByApplicantUserId(tenant.getUserId());
     }
 }

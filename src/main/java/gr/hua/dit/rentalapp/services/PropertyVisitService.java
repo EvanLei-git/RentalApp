@@ -247,4 +247,10 @@ public class PropertyVisitService {
             throw new IllegalArgumentException("Invalid date format. Please use yyyy-MM-dd", e);
         }
     }
+
+    public List<PropertyVisit> getVisitsByTenant(String username) {
+        Tenant tenant = tenantRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Tenant not found"));
+        return propertyVisitRepository.findByTenant_Username(username);
+    }
 }

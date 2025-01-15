@@ -5,6 +5,93 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="/css/dashboard.css">
+    <style>
+        .dashboard-items {
+            padding: 20px;
+        }
+
+        .dashboard-item {
+            transition: transform 0.2s ease-in-out;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .status-badge {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .property-details {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+
+        .alert {
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .filter-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .filter-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .form-check {
+            margin-bottom: 8px;
+        }
+
+        .status-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-label i {
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Status colors */
+        .status-label.pending i { color: #f59e0b; }
+        .status-label.approved i { color: #10b981; }
+        .status-label.rejected i { color: #ef4444; }
+        .status-label.requested i { color: #3b82f6; }
+        .status-label.scheduled i { color: #6366f1; }
+        .status-label.canceled i { color: #6b7280; }
+        .status-label.completed i { color: #10b981; }
+    </style>
 </head>
 <body>
     <div th:fragment="content">
@@ -128,36 +215,48 @@
                                 </button>
                             </div>
                         </div>
-                        <div id="dashboardContent" class="p-4">
-                            <style>
-                                .error-message {
-                                    background: #fee2e2;
-                                    border: 2px solid #ef4444;
-                                    color: #dc2626;
-                                    padding: 20px;
-                                    margin: 20px 0;
-                                    text-align: center;
-                                    border-radius: 4px;
-                                }
-                                .error-message i {
-                                    font-size: 24px;
-                                    margin-bottom: 10px;
-                                }
-                            </style>
-                            <div class="error-message">
-                                <div class="content">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <h4>No Content Available</h4>
-                                    <p>There are currently no items to display.</p>
-                                </div>
-                            </div>
-                            <!-- Content will be loaded dynamically -->
+                        <div id="dashboardContent" class="dashboard-items">
+                            <!-- Loading spinner -->
                             <div class="loading-spinner">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
                             </div>
                         </div>
+
+                        <template id="dashboardItemTemplate">
+                            <div class="dashboard-item card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="card-title">
+                                                <i class="fas fa-home me-2"></i>
+                                                <span class="property-address"></span>
+                                            </h5>
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    <span class="item-date"></span>
+                                                </small>
+                                            </p>
+                                        </div>
+                                        <span class="status-badge badge"></span>
+                                    </div>
+                                    <div class="property-details mt-2">
+                                        <p class="mb-1">
+                                            <i class="fas fa-bed me-2"></i>
+                                            <span class="bedrooms"></span> Bedrooms
+                                            <i class="fas fa-bath ms-3 me-2"></i>
+                                            <span class="bathrooms"></span> Bathrooms
+                                        </p>
+                                        <p class="mb-1">
+                                            <i class="fas fa-euro-sign me-2"></i>
+                                            <span class="rent-amount"></span> per month
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -249,38 +348,96 @@
                     const dateTo = document.getElementById('dateTo').value;
 
                     try {
-                        const response = await fetch('/api/dashboard/tenant/data', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                filterType: selectedFilter,
-                                applicationStatuses: applicationStatuses,
-                                visitStatuses: visitStatuses,
-                                dateRange: {
-                                    from: dateFrom,
-                                    to: dateTo
-                                }
-                            })
-                        });
+                        const response = await fetch('/api/applications/tenant/dashboard?' + new URLSearchParams({
+                            filterType: selectedFilter,
+                            applicationStatuses: applicationStatuses,
+                            visitStatuses: visitStatuses,
+                            dateFrom: dateFrom || '',
+                            dateTo: dateTo || ''
+                        }));
 
                         if (!response.ok) {
                             throw new Error('Failed to fetch dashboard data');
                         }
 
                         const data = await response.json();
-                        // Update the dashboard content based on the received data
-                        // This will need to be implemented based on your data structure
-                        dashboardContent.innerHTML = 'Dashboard data loaded successfully!';
+                        dashboardContent.innerHTML = '';
+
+                        if (data.length === 0) {
+                            dashboardContent.innerHTML = `
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>No items found matching your filters
+                                </div>`;
+                            return;
+                        }
+
+                        const template = document.getElementById('dashboardItemTemplate');
+
+                        data.forEach(item => {
+                            const clone = template.content.cloneNode(true);
+                            
+                            // Set property details
+                            clone.querySelector('.property-address').textContent = item.property.address;
+                            clone.querySelector('.bedrooms').textContent = item.property.bedrooms;
+                            clone.querySelector('.bathrooms').textContent = item.property.bathrooms;
+                            clone.querySelector('.rent-amount').textContent = item.property.rentAmount;
+                            
+                            // Format and set date
+                            const date = new Date(item.date);
+                            clone.querySelector('.item-date').textContent = date.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+
+                            // Set status badge
+                            const badge = clone.querySelector('.status-badge');
+                            const status = item.status;
+                            badge.textContent = status;
+                            
+                            // Add appropriate status class
+                            if (item.type === 'APPLICATION') {
+                                switch(status) {
+                                    case 'PENDING':
+                                        badge.classList.add('bg-warning');
+                                        break;
+                                    case 'APPROVED':
+                                        badge.classList.add('bg-success');
+                                        break;
+                                    case 'REJECTED':
+                                        badge.classList.add('bg-danger');
+                                        break;
+                                }
+                            } else { // VISIT
+                                switch(status) {
+                                    case 'REQUESTED':
+                                        badge.classList.add('bg-info');
+                                        break;
+                                    case 'SCHEDULED':
+                                        badge.classList.add('bg-primary');
+                                        break;
+                                    case 'CANCELED':
+                                        badge.classList.add('bg-secondary');
+                                        break;
+                                    case 'COMPLETED':
+                                        badge.classList.add('bg-success');
+                                        break;
+                                }
+                            }
+
+                            dashboardContent.appendChild(clone);
+                        });
                     } catch (error) {
                         console.error('Error:', error);
                         dashboardContent.innerHTML = `
                             <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle"></i> Failed to load dashboard data. Please try again.
+                                <i class="fas fa-exclamation-circle me-2"></i>Failed to load dashboard data. Please try again.
                             </div>`;
                     }
                 }
+
+                // Initial dashboard update
+                updateDashboard();
             });
         </script>
     </th:block>

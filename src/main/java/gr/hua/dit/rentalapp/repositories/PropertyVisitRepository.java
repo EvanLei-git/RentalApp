@@ -16,4 +16,6 @@ public interface PropertyVisitRepository extends JpaRepository<PropertyVisit, Lo
     boolean existsByProperty_PropertyIdAndTenant_Username(Long propertyId, String username);
 
     List<PropertyVisit> findByProperty_PropertyIdAndVisitDateBetween(Long propertyId, Date startDate, Date endDate);
+
+    List<PropertyVisit> findByTenant_Username(String username);
 }
