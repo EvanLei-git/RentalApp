@@ -6,6 +6,7 @@ import gr.hua.dit.rentalapp.repositories.LandlordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -26,20 +27,24 @@ public class LandlordService {
         return landlordRepository.findById(id).orElse(null);
     }
 
+    public Landlord getLandlordByUsername(String username) {
+        return landlordRepository.findByUsername(username).orElse(null);
+    }
+
     public Landlord createLandlord(Landlord landlord) {
         // Possibly encode password, set roles
         return landlordRepository.save(landlord);
     }
 
     public void updateLandlord(Long id, Landlord landlordDetails) {
-        Landlord existing = landlordRepository.findById(id).orElse(null);
-        if (existing == null) {
+        Landlord existing = getLandlordById(id);
+        if (existing != null) {
+            existing.setEmail(landlordDetails.getEmail());
+            existing.setPhoneNumber(landlordDetails.getPhoneNumber());
+            landlordRepository.save(existing);
+        } else {
             throw new RuntimeException("Landlord not found: " + id);
         }
-        // Update fields
-        existing.setEmail(landlordDetails.getEmail());
-        // ...
-        landlordRepository.save(existing);
     }
 
     public void deleteLandlord(Long id) {
@@ -47,10 +52,7 @@ public class LandlordService {
     }
 
     public List<Property> getPropertiesByLandlord(Long landlordId) {
-        Landlord landlord = landlordRepository.findById(landlordId).orElse(null);
-        if (landlord == null) {
-            throw new RuntimeException("Landlord not found: " + landlordId);
-        }
-        return landlord.getProperties(); // Because landlord has List<Property> properties
+        Landlord landlord = getLandlordById(landlordId);
+        return landlord != null ? landlord.getProperties() : new ArrayList<>();
     }
 }

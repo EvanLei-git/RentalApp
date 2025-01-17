@@ -4,6 +4,7 @@ import gr.hua.dit.rentalapp.entities.Property;
 import gr.hua.dit.rentalapp.entities.PropertyVisit;
 import gr.hua.dit.rentalapp.entities.User;
 import gr.hua.dit.rentalapp.entities.Role;
+import gr.hua.dit.rentalapp.entities.Landlord;
 import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.services.PropertyService;
 import gr.hua.dit.rentalapp.services.PropertyVisitService;
@@ -11,18 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.stream.Collectors;
-import java.util.Collections;
+
 import java.security.Principal;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This controller handles all the requests related to properties.
@@ -54,7 +51,30 @@ public class PropertyController {
 
     // POST: create a new property (Landlord usage)
     @PostMapping
-    public ResponseEntity<String> createProperty(@RequestBody Property property) {
+    public ResponseEntity<String> createProperty(@RequestBody Property property, Principal principal) {
+        // Get the currently logged in user
+        User user = (User) ((Authentication) principal).getPrincipal();
+        
+        // Check if user is null
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not authenticated");
+        }
+        
+        // Check if user has LANDLORD role
+        boolean isLandlord = user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleType.LANDLORD);
+                
+        if (!isLandlord) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only landlords can create properties");
+        }
+        
+        // Check if user is instance of Landlord
+        if (!(user instanceof Landlord)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User has landlord role but is not a Landlord instance");
+        }
+        
+        // Set the owner before saving
+        property.setOwner((Landlord) user);
         propertyService.createProperty(property);
         return ResponseEntity.ok("Property created successfully!");
     }
@@ -203,5 +223,45 @@ public class PropertyController {
         }
         
         return mav;
+    }
+    
+    // API Endpoints for property management
+    @GetMapping("/api/landlords/properties/{propertyId}")
+    public ResponseEntity<Property> getPropertyByIdApi(@PathVariable Long propertyId) {
+        Property property = propertyService.getPropertyById(propertyId);
+        if (property != null) {
+            return ResponseEntity.ok(property);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/api/landlords/properties/{propertyId}")
+    public ResponseEntity<String> updatePropertyApi(@PathVariable Long propertyId, @RequestBody Property property) {
+        try {
+            propertyService.updateProperty(propertyId, property);
+            return ResponseEntity.ok("Property updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to update property: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/api/landlords/properties/{propertyId}")
+    public ResponseEntity<String> deletePropertyApi(@PathVariable Long propertyId) {
+        try {
+            propertyService.deleteProperty(propertyId);
+            return ResponseEntity.ok("Property deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to delete property: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/api/landlords/properties")
+    public ResponseEntity<Property> createPropertyApi(@RequestBody Property property) {
+        try {
+            Property newProperty = propertyService.createProperty(property);
+            return ResponseEntity.ok(newProperty);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
