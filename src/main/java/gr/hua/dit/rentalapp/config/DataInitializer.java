@@ -1,24 +1,18 @@
 package gr.hua.dit.rentalapp.config;
 
-import gr.hua.dit.rentalapp.entities.Administrator;
-import gr.hua.dit.rentalapp.entities.Landlord;
-import gr.hua.dit.rentalapp.entities.Property;
-import gr.hua.dit.rentalapp.entities.Tenant;
+import gr.hua.dit.rentalapp.entities.*;
+import gr.hua.dit.rentalapp.enums.ApplicationStatus;
 import gr.hua.dit.rentalapp.enums.PropertyType;
-import gr.hua.dit.rentalapp.repositories.AdministratorRepository;
-import gr.hua.dit.rentalapp.repositories.LandlordRepository;
-import gr.hua.dit.rentalapp.repositories.PropertyRepository;
-import gr.hua.dit.rentalapp.repositories.RoleRepository;
-import gr.hua.dit.rentalapp.repositories.TenantRepository;
-import gr.hua.dit.rentalapp.entities.Role;
 import gr.hua.dit.rentalapp.enums.RoleType;
+import gr.hua.dit.rentalapp.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -39,6 +33,12 @@ public class DataInitializer implements CommandLineRunner {
     private RoleRepository roleRepository;
 
     @Autowired
+    private RentalApplicationRepository rentalApplicationRepository;
+
+    @Autowired
+    private ReportRepository reportRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -48,76 +48,66 @@ public class DataInitializer implements CommandLineRunner {
         // Create test users if database is empty
         if (propertyRepository.count() == 0) {
             try {
-                // Create test tenant
-                Tenant tenant = new Tenant();
-                tenant.setUsername("testtenant");
-                tenant.setEmail("testtenant@example.com");
-                tenant.setPassword(passwordEncoder.encode("test"));
-                tenant.setFirstName("Test");
-                tenant.setLastName("Tenant");
-                tenant.setEmploymentStatus("Employed");
-                tenant.setMonthlyIncome(2000.0);
-                tenant.setIdFrontImageOid(null);
-                tenant.setIdBackImageOid(null);
-                Set<Role> tenantRoles = new HashSet<>();
-                tenantRoles.add(roleRepository.findByName(RoleType.TENANT).orElseThrow());
-                tenant.setRoles(tenantRoles);
-                Tenant testTenant = tenantRepository.save(tenant);
+                // Create test admin first since we need it to verify landlords
+                Administrator admin = createAdmin("testadmin", "test_admin@example.com", "test", "Test", "Admin");
 
-                // Create test landlord
-                Landlord landlord = new Landlord();
-                landlord.setUsername("testlandlord");
-                landlord.setEmail("testlandlord@example.com");
-                landlord.setPassword(passwordEncoder.encode("test"));
-                landlord.setFirstName("Test");
-                landlord.setLastName("Landlord");
-                Set<Role> landlordRoles = new HashSet<>();
-                landlordRoles.add(roleRepository.findByName(RoleType.LANDLORD).orElseThrow());
-                landlord.setRoles(landlordRoles);
-                Landlord testLandlord = landlordRepository.save(landlord);
+                // Create test tenants
+                Tenant tenant1 = createTenant("testtenant1", "test_tenant1@example.com", "test", "Test", "Tenant1", "Employed", 2500.0);
+                Tenant tenant2 = createTenant("testtenant2", "test_tenant2@example.com", "test", "Test", "Tenant2", "Self-Employed", 3000.0);
+                
+                // Create test landlords
+                Landlord landlord1 = createLandlord("test_landlord1", "test_landlord1@example.com", "test", "Test", "Landlord1", "1234567890", admin);
+                Landlord landlord2 = createLandlord("test_landlord2", "test_landlord2@example.com", "test", "Test", "Landlord2", "0987654321", admin);
 
-                // Create test admin
-                Administrator admin = new Administrator();
-                admin.setUsername("testadmin");
-                admin.setEmail("testadmin@example.com");
-                admin.setPassword(passwordEncoder.encode("test"));
-                admin.setFirstName("Test");
-                admin.setLastName("Admin");
-                Set<Role> adminRoles = new HashSet<>();
-                adminRoles.add(roleRepository.findByName(RoleType.ADMINISTRATOR).orElseThrow());
-                admin.setRoles(adminRoles);
-                Administrator testAdmin = administratorRepository.save(admin);
+                // Create properties for Test Landlord1
+                Property property1 = createTestProperty(landlord1, "Test Address 1", "Athens", "Greece", 
+                        PropertyType.APARTMENT, 800.0, 2, 1, 85.0, true, true, false, true,
+                        "Test Property 1 - Unrented Apartment", false, true);
 
-                // Create test properties
-                createTestProperty(testLandlord, "123 Main St", "Athens", "Greece", 
-                        PropertyType.APARTMENT, 800.0, 2, 1, 75.0, true, true, false, true,
-                        "Modern apartment in the heart of Athens");
-
-                createTestProperty(testLandlord, "456 Beach Road", "Thessaloniki", "Greece", 
+                Property property2 = createTestProperty(landlord1, "Test Address 2", "Thessaloniki", "Greece", 
                         PropertyType.HOUSE, 1200.0, 3, 2, 120.0, true, false, true, true,
-                        "Spacious house with garden near the sea");
+                        "Test Property 2 - Unrented House", false, false);
 
-                createTestProperty(testLandlord, "789 Mountain View", "Patras", "Greece", 
-                        PropertyType.DUPLEX, 2000.0, 4, 3, 200.0, true, true, true, true,
-                        "Luxury duplex with panoramic views");
+                Property property3 = createTestProperty(landlord1, "Test Address 3", "Athens", "Greece", 
+                        PropertyType.APARTMENT, 750.0, 2, 1, 75.0, true, false, false, true,
+                        "Test Property 3 - Unrented Apartment", false, true);
 
-                createTestProperty(testLandlord, "321 City Center", "Athens", "Greece", 
-                        PropertyType.STUDIO, 500.0, 1, 1, 45.0, false, true, false, true,
-                        "Cozy studio in downtown Athens");
+                // Create properties for Test Landlord2
+                Property property4 = createTestProperty(landlord2, "Test Address 4", "Patras", "Greece", 
+                        PropertyType.STUDIO, 600.0, 1, 1, 65.0, false, true, false, true,
+                        "Test Property 4 - Rented Studio", true, true);
 
-                createTestProperty(testLandlord, "654 Suburban Lane", "Heraklion", "Greece", 
-                        PropertyType.HOUSE, 1500.0, 3, 2, 150.0, true, true, true, false,
-                        "Family house in quiet neighborhood");
+                Property property5 = createTestProperty(landlord2, "Test Address 5", "Heraklion", "Greece", 
+                        PropertyType.APARTMENT, 900.0, 2, 2, 95.0, true, true, false, true,
+                        "Test Property 5 - Unrented Apartment", false, false);
 
-                createTestProperty(testLandlord, "987 Coastal Drive", "Volos", "Greece", 
-                        PropertyType.APARTMENT, 900.0, 2, 1, 80.0, true, false, false, true,
-                        "Sea view apartment with modern amenities");
+                // Create rental applications
+                createRentalApplication(property4, tenant1, ApplicationStatus.APPROVED);
+                createRentalApplication(property2, tenant2, ApplicationStatus.PENDING);
+                createRentalApplication(property5, tenant1, ApplicationStatus.PENDING);
 
-                createTestProperty(testLandlord, "147 Park Avenue", "Larissa", "Greece", 
-                        PropertyType.HOUSE, 1100.0, 3, 2, 130.0, true, true, true, true,
-                        "Beautiful house near central park");
+                // Create some test reports
+                Report report1 = new Report();
+                report1.setTitle("Test Report 1");
+                report1.setDescription("This is a test report from tenant");
+                report1.setUser(tenant1);
+                report1.setUserRole("TENANT");
+                report1.setCreateDate(new Date());
+                report1.setResolved(false);
+
+                Report report2 = new Report();
+                report2.setTitle("Test Report 2");
+                report2.setDescription("This is a test report from landlord");
+                report2.setUser(landlord1);
+                report2.setUserRole("LANDLORD");
+                report2.setCreateDate(new Date());
+                report2.setResolved(true);
+
+                reportRepository.saveAll(Arrays.asList(report1, report2));
+
             } catch (Exception e) {
-                // Handle exception
+                System.err.println("Error initializing data: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -137,10 +127,55 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private void createTestProperty(Landlord landlord, String address, String city, String country,
-                                  PropertyType type, double rentAmount, int bedrooms, int bathrooms,
-                                  double size, boolean hasParking, boolean allowsPets,
-                                  boolean hasGarden, boolean hasBalcony, String description) {
+    private Tenant createTenant(String username, String email, String password, String firstName, String lastName, 
+                              String employmentStatus, double monthlyIncome) {
+        Tenant tenant = new Tenant();
+        tenant.setUsername(username);
+        tenant.setEmail(email);
+        tenant.setPassword(passwordEncoder.encode(password));
+        tenant.setFirstName(firstName);
+        tenant.setLastName(lastName);
+        tenant.setEmploymentStatus(employmentStatus);
+        tenant.setMonthlyIncome(monthlyIncome);
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByName(RoleType.TENANT).orElseThrow());
+        tenant.setRoles(roles);
+        return tenantRepository.save(tenant);
+    }
+
+    private Landlord createLandlord(String username, String email, String password, String firstName, String lastName, String phoneNumber, Administrator verifiedBy) {
+        Landlord landlord = new Landlord();
+        landlord.setUsername(username);
+        landlord.setEmail(email);
+        landlord.setPassword(passwordEncoder.encode(password));
+        landlord.setFirstName(firstName);
+        landlord.setLastName(lastName);
+        landlord.setPhoneNumber(phoneNumber);
+        landlord.setVerifiedBy(verifiedBy);
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByName(RoleType.LANDLORD).orElseThrow());
+        landlord.setRoles(roles);
+        return landlordRepository.save(landlord);
+    }
+
+    private Administrator createAdmin(String username, String email, String password, String firstName, String lastName) {
+        Administrator admin = new Administrator();
+        admin.setUsername(username);
+        admin.setEmail(email);
+        admin.setPassword(passwordEncoder.encode(password));
+        admin.setFirstName(firstName);
+        admin.setLastName(lastName);
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByName(RoleType.ADMINISTRATOR).orElseThrow());
+        admin.setRoles(roles);
+        return administratorRepository.save(admin);
+    }
+
+    private Property createTestProperty(Landlord landlord, String address, String city, String country,
+                                      PropertyType type, double rentAmount, int bedrooms, int bathrooms,
+                                      double size, boolean hasParking, boolean allowsPets,
+                                      boolean hasGarden, boolean hasBalcony, String description,
+                                      boolean isRented, boolean isApproved) {
         Property property = new Property();
         property.setOwner(landlord);
         property.setAddress(address);
@@ -157,8 +192,23 @@ public class DataInitializer implements CommandLineRunner {
         property.setHasGarden(hasGarden);
         property.setHasBalcony(hasBalcony);
         property.setDescription(description);
-        property.setApproved(true); 
-        propertyRepository.save(property);
+        property.setRented(isRented);
+        property.setApproved(isApproved);
+        
+        // Generate a random date between 6 months ago and today
+        Instant now = Instant.now();
+        Instant sixMonthsAgo = now.minus(180, ChronoUnit.DAYS);
+        long randomDate = new Random().nextLong(sixMonthsAgo.toEpochMilli(), now.toEpochMilli());
+        property.setCreationDate(new Date(randomDate));
+        
+        return propertyRepository.save(property);
+    }
+
+    private RentalApplication createRentalApplication(Property property, Tenant tenant, ApplicationStatus status) {
+        RentalApplication application = new RentalApplication(tenant, property);
+        application.setStatus(status);
+        application.setApplicationDate(new Date());
+        return rentalApplicationRepository.save(application);
     }
 
     private String getPostalCodeForCity(String city) {
@@ -171,12 +221,8 @@ public class DataInitializer implements CommandLineRunner {
                 return "26221";
             case "heraklion":
                 return "71201";
-            case "volos":
-                return "38221";
-            case "larissa":
-                return "41221";
             default:
-                return "10000"; 
+                return "00000";
         }
     }
 }

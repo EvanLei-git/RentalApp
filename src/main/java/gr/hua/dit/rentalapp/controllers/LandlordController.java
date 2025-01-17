@@ -2,6 +2,7 @@ package gr.hua.dit.rentalapp.controllers;
 
 import gr.hua.dit.rentalapp.entities.Landlord;
 import gr.hua.dit.rentalapp.entities.Property;
+import gr.hua.dit.rentalapp.entities.PropertyVisit;
 import gr.hua.dit.rentalapp.services.LandlordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -69,22 +70,20 @@ public class LandlordController {
                     Map<String, Object> propertyData = new HashMap<>();
                     propertyData.put("propertyId", property.getPropertyId());
                     propertyData.put("address", property.getAddress());
-                    propertyData.put("type", property.getType());
-                    propertyData.put("rentAmount", property.getRentAmount());
                     propertyData.put("bedrooms", property.getBedrooms());
                     propertyData.put("bathrooms", property.getBathrooms());
+                    propertyData.put("rentAmount", property.getRentAmount());
+                    propertyData.put("type", property.getType());
+                    propertyData.put("city", property.getCity());
                     propertyData.put("country", property.getCountry());
-                    propertyData.put("isApproved", property.isApproved());
+                    propertyData.put("description", property.getDescription());
+                    propertyData.put("sizeInSquareMeters", property.getSizeInSquareMeters());
+                    propertyData.put("hasParking", property.isHasParking());
+                    propertyData.put("allowsPets", property.isAllowsPets());
+                    propertyData.put("hasGarden", property.isHasGarden());
+                    propertyData.put("hasBalcony", property.isHasBalcony());
+                    propertyData.put("isRented", property.isRented());
                     
-                    // Get all statuses for this property
-                    List<String> propertyStatuses = new ArrayList<>();
-                    if (property.isApproved()) {
-                        propertyStatuses.add("COMPLETED");
-                    } else {
-                        propertyStatuses.add("PENDING");
-                    }
-                    
-                    propertyData.put("statuses", propertyStatuses);
                     aggregatedProperties.add(propertyData);
                 }
                 response.put("properties", aggregatedProperties);

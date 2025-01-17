@@ -37,20 +37,24 @@ public class PropertyController {
         this.propertyVisitService = propertyVisitService;
     }
 
-    // GET all properties
-    @GetMapping
-    public List<Property> getAllProperties() {
-        return propertyService.getAllProperties();
-    }
-
     // GET single property
     @GetMapping("/{propertyId}")
-    public Property getPropertyById(@PathVariable Long propertyId) {
-        return propertyService.getPropertyById(propertyId);
+    @ResponseBody
+    public ResponseEntity<Property> getPropertyById(@PathVariable Long propertyId) {
+        try {
+            Property property = propertyService.getPropertyById(propertyId);
+            if (property != null) {
+                return ResponseEntity.ok(property);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     // POST: create a new property (Landlord usage)
-    @PostMapping
+    @PostMapping("/create")
+    @ResponseBody
     public ResponseEntity<String> createProperty(@RequestBody Property property, Principal principal) {
         // Get the currently logged in user
         User user = (User) ((Authentication) principal).getPrincipal();
@@ -82,15 +86,23 @@ public class PropertyController {
     // PUT: update property details
     @PutMapping("/{propertyId}")
     public ResponseEntity<String> updateProperty(@PathVariable Long propertyId, @RequestBody Property updatedProperty) {
-        propertyService.updateProperty(propertyId, updatedProperty);
-        return ResponseEntity.ok("Property updated successfully!");
+        try {
+            propertyService.updateProperty(propertyId, updatedProperty);
+            return ResponseEntity.ok("Property updated successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to update property: " + e.getMessage());
+        }
     }
 
     // DELETE: remove property
     @DeleteMapping("/{propertyId}")
     public ResponseEntity<String> deleteProperty(@PathVariable Long propertyId) {
-        propertyService.deleteProperty(propertyId);
-        return ResponseEntity.ok("Property deleted successfully!");
+        try {
+            propertyService.deleteProperty(propertyId);
+            return ResponseEntity.ok("Property deleted successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to delete property: " + e.getMessage());
+        }
     }
 
     // GET property data for home page
@@ -98,7 +110,10 @@ public class PropertyController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getHomePageData() {
         try {
-            List<Property> properties = propertyService.getAllProperties();
+            List<Property> properties = propertyService.getAllProperties().stream()
+                .filter(property -> !property.isRented() && property.isApproved()) // Only show approved and unrented properties
+                .collect(Collectors.toList());
+
             List<Map<String, Object>> propertyDTOs = properties.stream()
                 .map(property -> {
                     Map<String, Object> dto = new HashMap<>();
@@ -114,6 +129,11 @@ public class PropertyController {
                     dto.put("allowsPets", property.isAllowsPets());
                     dto.put("hasGarden", property.isHasGarden());
                     dto.put("hasBalcony", property.isHasBalcony());
+                    dto.put("type", property.getType());
+                    dto.put("description", property.getDescription());
+                    dto.put("creationDate", property.getCreationDate());
+                    dto.put("rented", property.isRented());
+                    dto.put("approved", property.isApproved());
                     dto.put("landlordUsername", property.getOwner() != null ? property.getOwner().getUsername() : null);
                     return dto;
                 })
@@ -141,6 +161,7 @@ public class PropertyController {
             
             return ResponseEntity.ok(data);
         } catch (Exception e) {
+            e.printStackTrace(); // Log the error
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", e.getMessage()));
         }
@@ -161,6 +182,7 @@ public class PropertyController {
         
         try {
             List<Property> filteredProperties = propertyService.getAllProperties().stream()
+                .filter(p -> !p.isRented() && p.isApproved()) // Only show approved and unrented properties
                 .filter(p -> city == null || p.getCity().equals(city))
                 .filter(p -> country == null || p.getCountry().equals(country))
                 .filter(p -> minPrice == null || p.getRentAmount() >= minPrice)
@@ -186,6 +208,11 @@ public class PropertyController {
                     dto.put("allowsPets", property.isAllowsPets());
                     dto.put("hasGarden", property.isHasGarden());
                     dto.put("hasBalcony", property.isHasBalcony());
+                    dto.put("type", property.getType());
+                    dto.put("description", property.getDescription());
+                    dto.put("creationDate", property.getCreationDate());
+                    dto.put("rented", property.isRented());
+                    dto.put("approved", property.isApproved());
                     dto.put("landlordUsername", property.getOwner() != null ? property.getOwner().getUsername() : null);
                     return dto;
                 })
@@ -193,6 +220,7 @@ public class PropertyController {
 
             return ResponseEntity.ok(propertyDTOs);
         } catch (Exception e) {
+            e.printStackTrace(); // Log the error
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

@@ -13,14 +13,17 @@ public class Landlord extends User {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "verifiedLandlords", "roles"})
     private Administrator verifiedBy;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "owner", "visits", "applications"})
     private List<Property> properties = new ArrayList<>();
 
     @Column(name = "phone_number")
     private String phoneNumber;
+
+    private boolean isVerified;
 
     // Constructors
     public Landlord() {
@@ -59,5 +62,13 @@ public class Landlord extends User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        isVerified = verified;
     }
 }

@@ -1,12 +1,12 @@
 package gr.hua.dit.rentalapp.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import gr.hua.dit.rentalapp.enums.PropertyType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 @Entity
 @Table(name = "properties")
@@ -15,66 +15,96 @@ public class Property {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty("id")
     private Long propertyId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "landlord_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "properties", "visits", "password"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "properties", "visits", "password", "roles", "authorities"})
+    @JsonProperty("owner")
     private Landlord owner;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pendingProperties", "password"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pendingProperties", "password", "roles", "authorities"})
+    @JsonProperty("verifiedBy")
     private Administrator verifiedBy;
 
     @NotBlank
+    @JsonProperty("address")
     private String address;
 
     @Enumerated(EnumType.STRING)
     @NotNull
+    @JsonProperty("type")
     private PropertyType type;
 
     @NotNull
+    @JsonProperty("rentAmount")
     private double rentAmount;
 
     @NotNull
+    @JsonProperty("bedrooms")
     private int bedrooms;
 
     @NotNull
+    @JsonProperty("bathrooms")
     private int bathrooms;
 
-    private boolean isApproved;
-
     @NotBlank
+    @JsonProperty("country")
     private String country;
 
     @NotBlank
+    @JsonProperty("city")
     private String city;
 
     @NotBlank
+    @JsonProperty("postalCode")
     private String postalCode;
 
     @Column(columnDefinition = "TEXT")
+    @JsonProperty("description")
     private String description;
 
     @NotNull
+    @JsonProperty("sizeInSquareMeters")
     private double sizeInSquareMeters;
 
     @NotNull
+    @JsonProperty("hasParking")
     private boolean hasParking;
 
     @NotNull
+    @JsonProperty("allowsPets")
     private boolean allowsPets;
 
     @NotNull
+    @JsonProperty("hasGarden")
     private boolean hasGarden;
 
     @NotNull
+    @JsonProperty("hasBalcony")
     private boolean hasBalcony;
+
+    @Column(name = "creation_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    @JsonProperty("creationDate")
+    private Date creationDate;
+
+    @Column(name = "is_rented", nullable = false, columnDefinition = "boolean default false")
+    @JsonProperty("isRented")
+    private boolean isRented;
+
+    @Column(name = "is_approved", nullable = false, columnDefinition = "boolean default false")
+    @JsonProperty("isApproved")
+    private boolean isApproved;
 
     // Constructors
     public Property() {
-        this.isApproved = false; // Default value
+        this.creationDate = new Date();
+        this.isRented = false;
+        this.isApproved = false;
     }
 
     public Property(Landlord owner, String address, PropertyType type, double rentAmount, int bedrooms, int bathrooms) {
@@ -142,14 +172,6 @@ public class Property {
 
     public void setBathrooms(int bathrooms) {
         this.bathrooms = bathrooms;
-    }
-
-    public boolean isApproved() {
-        return isApproved;
-    }
-
-    public void setApproved(boolean approved) {
-        isApproved = approved;
     }
 
     public String getCountry() {
@@ -230,5 +252,29 @@ public class Property {
 
     public void setVerifiedBy(Administrator verifiedBy) {
         this.verifiedBy = verifiedBy;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public boolean isRented() {
+        return isRented;
+    }
+
+    public void setRented(boolean rented) {
+        isRented = rented;
+    }
+
+    public boolean isApproved() {
+        return isApproved;
+    }
+
+    public void setApproved(boolean approved) {
+        isApproved = approved;
     }
 }

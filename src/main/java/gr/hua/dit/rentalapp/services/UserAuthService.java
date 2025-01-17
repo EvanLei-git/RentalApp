@@ -5,6 +5,7 @@ import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.repositories.RoleRepository;
 import gr.hua.dit.rentalapp.repositories.UserRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,7 +40,7 @@ public class UserAuthService implements UserDetailsService {
     @Autowired
     private PostgresLargeObjectService largeObjectService;
 
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     @Override
@@ -85,18 +87,66 @@ public class UserAuthService implements UserDetailsService {
 
     public List<Map<String, Object>> getAllUsersInfo() {
         List<User> users = userRepository.findAll();
-        return users.stream().map(user -> {
-            Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("id", user.getUserId());
-            userInfo.put("username", user.getUsername());
-            userInfo.put("email", user.getEmail());
-            userInfo.put("firstName", user.getFirstName());
-            userInfo.put("lastName", user.getLastName());
-            userInfo.put("roles", user.getRoles().stream()
-                    .map(role -> role.getName().name())
-                    .collect(Collectors.toList()));
-            return userInfo;
-        }).collect(Collectors.toList());
+        return users.stream().map(this::convertUserToMap).collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> getFilteredUsers(String usernameFilter, String roleFilter, Boolean verifiedFilter) {
+        List<User> users = userRepository.findAll();
+
+        Stream<User> filteredStream = users.stream();
+
+        // Filter by username if provided
+        if (usernameFilter != null && !usernameFilter.isEmpty()) {
+            filteredStream = filteredStream.filter(user ->
+                user.getUsername().toLowerCase().startsWith(usernameFilter.toLowerCase()));
+        }
+
+        // Filter by role if provided
+        if (roleFilter != null && !roleFilter.isEmpty()) {
+            filteredStream = filteredStream.filter(user ->
+                user.getRoles().stream()
+                    .anyMatch(role -> role.getName().name().equalsIgnoreCase(roleFilter)));
+        }
+
+        // Filter by verification status if provided
+        if (verifiedFilter != null) {
+            filteredStream = filteredStream.filter(user -> {
+                if (user instanceof Landlord) {
+                    return ((Landlord) user).getVerifiedBy() != null == verifiedFilter;
+                } else if (user instanceof Tenant) {
+                    return ((Tenant) user).getVerifiedBy() != null == verifiedFilter;
+                }
+                return true; // Administrators are always considered verified
+            });
+        }
+
+        return filteredStream.map(this::convertUserToMap).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> convertUserToMap(User user) {
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", user.getUserId());
+        userInfo.put("username", user.getUsername());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("firstName", user.getFirstName());
+        userInfo.put("lastName", user.getLastName());
+        userInfo.put("roles", user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toList()));
+
+        // Add verification status
+        if (user instanceof Landlord) {
+            userInfo.put("verified", ((Landlord) user).getVerifiedBy() != null);
+            userInfo.put("userType", "LANDLORD");
+        } else if (user instanceof Tenant) {
+            userInfo.put("verified", ((Tenant) user).getVerifiedBy() != null);
+            userInfo.put("userType", "TENANT");
+        } else if (user instanceof Administrator) {
+            userInfo.put("verified", true);
+            userInfo.put("userType", "ADMINISTRATOR");
+        }
+
+        return userInfo;
     }
 
     @Transactional
@@ -104,26 +154,26 @@ public class UserAuthService implements UserDetailsService {
                         String firstName, String lastName, String role,
                         Double monthlyIncome, String employmentStatus,
                         MultipartFile idFrontImage, MultipartFile idBackImage) throws Exception {
-        
+
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("Username already exists");
         }
 
         User user;
         RoleType roleType;
-        
+
         if ("tenant".equalsIgnoreCase(role)) {
             roleType = RoleType.TENANT;
             Tenant tenant = new Tenant();
             tenant.setMonthlyIncome(monthlyIncome);
             tenant.setEmploymentStatus(employmentStatus);
-            
+
             try {
                 if (idFrontImage != null && !idFrontImage.isEmpty()) {
                     Long frontImageOid = largeObjectService.saveImage(idFrontImage.getBytes());
                     tenant.setIdFrontImageOid(frontImageOid);
                 }
-                
+
                 if (idBackImage != null && !idBackImage.isEmpty()) {
                     Long backImageOid = largeObjectService.saveImage(idBackImage.getBytes());
                     tenant.setIdBackImageOid(backImageOid);
@@ -187,14 +237,48 @@ public class UserAuthService implements UserDetailsService {
             if (isAdmin) {
                 throw new RuntimeException("Cannot delete administrator accounts");
             }
-            
-            // Delete associated property visits first
+
+            // Delete all reports created by the user
+            entityManager.createQuery("DELETE FROM Report r WHERE r.user.userId = :userId")
+                    .setParameter("userId", userId)
+                    .executeUpdate();
+
+            // If the user is a tenant, delete their rental applications first
             if (user instanceof Tenant) {
+                entityManager.createQuery("DELETE FROM RentalApplication ra WHERE ra.applicant.userId = :userId")
+                        .setParameter("userId", userId)
+                        .executeUpdate();
+                
+                // Delete tenant's visits
                 entityManager.createQuery("DELETE FROM PropertyVisit pv WHERE pv.tenant.userId = :userId")
                         .setParameter("userId", userId)
                         .executeUpdate();
-            } else if (user instanceof Landlord) {
-                entityManager.createQuery("DELETE FROM PropertyVisit pv WHERE pv.landlord.userId = :userId")
+            }
+            
+            // If the user is a landlord, handle their properties
+            if (user instanceof Landlord) {
+                // Get all properties owned by this landlord
+                List<Long> propertyIds = entityManager.createQuery(
+                        "SELECT p.propertyId FROM Property p WHERE p.owner.userId = :userId", Long.class)
+                        .setParameter("userId", userId)
+                        .getResultList();
+                
+                // Delete all rental applications for these properties
+                if (!propertyIds.isEmpty()) {
+                    entityManager.createQuery(
+                            "DELETE FROM RentalApplication ra WHERE ra.property.propertyId IN :propertyIds")
+                            .setParameter("propertyIds", propertyIds)
+                            .executeUpdate();
+                    
+                    // Delete all visits for these properties
+                    entityManager.createQuery(
+                            "DELETE FROM PropertyVisit pv WHERE pv.property.propertyId IN :propertyIds")
+                            .setParameter("propertyIds", propertyIds)
+                            .executeUpdate();
+                }
+                
+                // Now delete the properties
+                entityManager.createQuery("DELETE FROM Property p WHERE p.owner.userId = :userId")
                         .setParameter("userId", userId)
                         .executeUpdate();
             }
@@ -233,12 +317,12 @@ public class UserAuthService implements UserDetailsService {
         details.put("email", user.getEmail());
         details.put("firstName", user.getFirstName());
         details.put("lastName", user.getLastName());
-        
+
         if (user instanceof Tenant) {
             Tenant tenant = (Tenant) user;
             details.put("monthlyIncome", tenant.getMonthlyIncome());
             details.put("employmentStatus", tenant.getEmploymentStatus());
-            
+
             // Get ID photos
             if (tenant.getIdFrontImageOid() != null) {
                 try {
@@ -251,7 +335,7 @@ public class UserAuthService implements UserDetailsService {
                     System.err.println("Error fetching front ID photo: " + e.getMessage());
                 }
             }
-            
+
             if (tenant.getIdBackImageOid() != null) {
                 try {
                     byte[] backPhotoData = largeObjectService.getImage(tenant.getIdBackImageOid());
@@ -264,7 +348,7 @@ public class UserAuthService implements UserDetailsService {
                 }
             }
         }
-        
+
         // Get user roles
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName().name())
@@ -272,5 +356,51 @@ public class UserAuthService implements UserDetailsService {
         details.put("roles", roles);
 
         return details;
+    }
+
+    @Transactional
+    public void verifyUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Get the current admin user
+        String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(adminUsername)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        // Check if the current user has admin role
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().name().equals("ADMINISTRATOR"));
+        
+        if (!isAdmin) {
+            throw new RuntimeException("Only administrators can verify users");
+        }
+
+        // Cast to Administrator if it's the correct type
+        Administrator admin;
+        if (currentUser instanceof Administrator) {
+            admin = (Administrator) currentUser;
+        } else {
+            // Create a new Administrator instance if the user has admin role but isn't an Administrator instance
+            admin = new Administrator();
+            admin.setUserId(currentUser.getUserId());
+            admin.setUsername(currentUser.getUsername());
+            admin.setEmail(currentUser.getEmail());
+            admin.setFirstName(currentUser.getFirstName());
+            admin.setLastName(currentUser.getLastName());
+            admin.setPassword(currentUser.getPassword());
+            admin.setRoles(currentUser.getRoles());
+            admin = (Administrator) userRepository.save(admin);
+        }
+
+        if (user instanceof Landlord) {
+            ((Landlord) user).setVerifiedBy(admin);
+        } else if (user instanceof Tenant) {
+            ((Tenant) user).setVerifiedBy(admin);
+        } else {
+            throw new RuntimeException("Only Landlords and Tenants can be verified");
+        }
+
+        userRepository.save(user);
     }
 }

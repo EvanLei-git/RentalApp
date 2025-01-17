@@ -19,17 +19,17 @@ public class PropertyVisit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "owner", "applications"})
     private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications", "password"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications", "roles"})
     private Tenant tenant;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "landlord_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "properties", "visits", "password"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "properties", "roles", "verifiedBy"})
     private Landlord landlord;
 
     @Column(name = "visit_date")

@@ -1,7 +1,7 @@
 package gr.hua.dit.rentalapp.entities;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Table(name = "reports")
@@ -13,22 +13,23 @@ public class Report {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, length = 200)
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_id", nullable = false)
-    private Tenant tenant;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "user_role", nullable = false)
+    private String userRole;
+
+    @Column(name = "create_date", nullable = false)
+    private Date createDate;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private boolean resolved;
+    private boolean resolved = false;
 
     public Report() {
-        this.createdAt = LocalDateTime.now();
-        this.resolved = false;
     }
 
     // Getters and Setters
@@ -56,20 +57,28 @@ public class Report {
         this.description = description;
     }
 
-    public Tenant getTenant() {
-        return tenant;
+    public User getUser() {
+        return user;
     }
 
-    public void setTenant(Tenant tenant) {
-        this.tenant = tenant;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public String getUserRole() {
+        return userRole;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setUserRole(String userRole) {
+        this.userRole = userRole;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
     }
 
     public boolean isResolved() {

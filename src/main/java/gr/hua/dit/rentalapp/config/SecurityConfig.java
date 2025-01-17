@@ -50,12 +50,15 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .requestMatchers("/", "/home", "/login", "/register").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/templates/**").permitAll()
-                .requestMatchers("/api/properties/homeData", "/api/properties/filter", "/api/properties/*/details").permitAll()
+                .requestMatchers("/property/homeData", "/property/filter").permitAll()
                 .requestMatchers("/property/**").permitAll()
                 // Role-based access control
                 .requestMatchers("/api/tenant/**").hasRole("TENANT")
                 .requestMatchers("/api/landlord/**").hasRole("LANDLORD")
+                .requestMatchers("/api/administrators/**").hasRole("ADMINISTRATOR")
                 .requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
+                .requestMatchers("/api/reports/**").hasAnyRole("ADMINISTRATOR", "TENANT", "LANDLORD")
+                .requestMatchers("/api/visits/**").hasAnyRole("ADMINISTRATOR", "TENANT", "LANDLORD")
                 // Dashboard access
                 .requestMatchers("/dashboard", "/dashboard/**").authenticated()
                 .requestMatchers("/api/properties/**").authenticated()
