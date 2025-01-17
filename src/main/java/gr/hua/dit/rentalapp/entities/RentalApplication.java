@@ -32,6 +32,12 @@ public class RentalApplication {
     @Temporal(TemporalType.TIMESTAMP)
     private Date applicationDate;
 
+    @Temporal(TemporalType.DATE)
+    private Date startDate;
+
+    @Temporal(TemporalType.DATE)
+    private Date endDate;
+
     // Constructors
     public RentalApplication() {
         this.status = ApplicationStatus.PENDING;
@@ -54,12 +60,28 @@ public class RentalApplication {
         this.applicationId = applicationId;
     }
 
+    public Long getId() {
+        return applicationId;
+    }
+
+    public void setId(Long id) {
+        this.applicationId = id;
+    }
+
     public Tenant getApplicant() {
         return applicant;
     }
 
     public void setApplicant(Tenant applicant) {
         this.applicant = applicant;
+    }
+
+    public Tenant getTenant() {
+        return applicant;
+    }
+
+    public void setTenant(Tenant tenant) {
+        this.applicant = tenant;
     }
 
     public Property getProperty() {
@@ -84,5 +106,21 @@ public class RentalApplication {
 
     public void setApplicationDate(Date applicationDate) {
         this.applicationDate = applicationDate;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 }

@@ -7,6 +7,7 @@ import gr.hua.dit.rentalapp.services.UserAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import gr.hua.dit.rentalapp.entities.RentalApplication;
 import java.util.List;
 import java.util.Map;
 
@@ -71,5 +72,46 @@ public class AdministratorController {
     public ResponseEntity<String> approveProperty(@PathVariable Long adminId, @PathVariable Long propertyId) {
         adminService.approvePropertyListing(adminId, propertyId);
         return ResponseEntity.ok("Property approved successfully!");
+    }
+
+    // GET all rental applications
+    @GetMapping("/rentals")
+    public ResponseEntity<?> getAllRentals() {
+        try {
+            List<Map<String, Object>> rentals = adminService.getAllRentals();
+            return ResponseEntity.ok(rentals);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error fetching rentals: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/rentals/{rentalId}")
+    public ResponseEntity<?> getRentalDetails(@PathVariable Long rentalId) {
+        try {
+            RentalApplication rental = adminService.getRentalApplicationById(rentalId);
+            return ResponseEntity.ok(rental);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error fetching rental details: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{adminId}/rentals/{rentalId}/approve")
+    public ResponseEntity<?> approveRental(@PathVariable Long adminId, @PathVariable Long rentalId) {
+        try {
+            adminService.approveRentalApplication(adminId, rentalId);
+            return ResponseEntity.ok("Rental application approved successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error approving rental: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{adminId}/rentals/{rentalId}/reject")
+    public ResponseEntity<?> rejectRental(@PathVariable Long adminId, @PathVariable Long rentalId) {
+        try {
+            adminService.rejectRentalApplication(adminId, rentalId);
+            return ResponseEntity.ok("Rental application rejected successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error rejecting rental: " + e.getMessage());
+        }
     }
 }

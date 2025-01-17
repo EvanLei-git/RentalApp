@@ -82,29 +82,24 @@
 
                         <!-- Rentals Filter Section -->
                         <div class="filter-section" id="rentalsFilterSection" style="display: none;">
-                            <h5 class="filter-title">Verification Status</h5>
+                            <h5 class="filter-title">Rental Status</h5>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="VERIFIED" id="rentalVerified" checked>
-                                <label class="form-check-label status-label verified" for="rentalVerified">
-                                    <i class="fas fa-check-circle"></i> Verified
+                                <input class="form-check-input" type="checkbox" value="PENDING" id="statusPending" checked>
+                                <label class="form-check-label status-label pending" for="statusPending">
+                                    Pending
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="UNVERIFIED" id="rentalUnverified" checked>
-                                <label class="form-check-label status-label unverified" for="rentalUnverified">
-                                    <i class="fas fa-times-circle"></i> Unverified
+                                <input class="form-check-input" type="checkbox" value="APPROVED" id="statusApproved" checked>
+                                <label class="form-check-label status-label approved" for="statusApproved">
+                                    Approved
                                 </label>
                             </div>
-
-                            <!-- Rental Search -->
-                            <div class="filter-section">
-                                <h5 class="filter-title">Search by ID</h5>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="rentalSearch" placeholder="Enter rental ID...">
-                                    <button class="btn btn-outline-primary" type="button" id="searchRentalBtn">
-                                        <i class="fas fa-search"></i>
-                                    </button>
-                                </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="REJECTED" id="statusRejected" checked>
+                                <label class="form-check-label status-label rejected" for="statusRejected">
+                                    Rejected
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -117,7 +112,7 @@
                             <h2><i class="fas fa-shield-alt"></i> Admin Dashboard</h2>
                         </div>
                         <div id="dashboardContent">
-                            <div id="usersTableSection">
+                            <div id="usersTable" style="display: block;">
                                 <div class="table-responsive mt-3">
                                     <table class="table table-hover">
                                         <thead>
@@ -136,8 +131,24 @@
                                     </table>
                                 </div>
                             </div>
-                            <div id="rentalsTableSection" style="display: none;">
-                                <!-- Rentals content -->
+                            <div id="rentalsTable" style="display: none;">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Property</th>
+                                                <th>Tenant</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rentalsTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -208,23 +219,22 @@
         </style>
         <script th:inline="javascript">
             function updateDashboard() {
-                const viewType = document.querySelector('input[name="viewType"]:checked').id;
+                const view = document.querySelector('input[name="viewType"]:checked').id;
                 
-                // Show/hide appropriate sections
-                document.getElementById('usersTableSection').style.display = 
-                    viewType === 'usersView' ? 'block' : 'none';
-                document.getElementById('rentalsTableSection').style.display = 
-                    viewType === 'rentalsView' ? 'block' : 'none';
-                
-                // Update filters visibility
-                document.getElementById('usersFilterSection').style.display = 
-                    viewType === 'usersView' ? 'block' : 'none';
-                document.getElementById('rentalsFilterSection').style.display = 
-                    viewType === 'rentalsView' ? 'block' : 'none';
-                
-                // Fetch data
-                if (viewType === 'usersView') {
+                // Hide all filter sections and content
+                document.getElementById('usersFilterSection').style.display = 'none';
+                document.getElementById('rentalsFilterSection').style.display = 'none';
+                document.getElementById('usersTable').style.display = 'none';
+                document.getElementById('rentalsTable').style.display = 'none';
+
+                if (view === 'usersView') {
+                    document.getElementById('usersFilterSection').style.display = 'block';
+                    document.getElementById('usersTable').style.display = 'block';
                     fetchUsers();
+                } else if (view === 'rentalsView') {
+                    document.getElementById('rentalsFilterSection').style.display = 'block';
+                    document.getElementById('rentalsTable').style.display = 'block';
+                    fetchRentals();
                 }
             }
 
@@ -466,6 +476,69 @@
                         console.error('Error:', error);
                         showAlert('danger', 'Error fetching user details: ' + error.message);
                     });
+            }
+
+            function fetchRentals() {
+                fetch('/api/administrators/rentals')
+                    .then(response => response.json())
+                    .then(rentals => {
+                        const tableBody = document.getElementById('rentalsTableBody');
+                        tableBody.innerHTML = '';
+
+                        rentals.forEach(rental => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${rental.id}</td>
+                                <td>${rental.property.title}</td>
+                                <td>${rental.tenant.firstName} ${rental.tenant.lastName}</td>
+                                <td>${rental.startDate}</td>
+                                <td>${rental.endDate}</td>
+                                <td><span class="badge ${getBadgeClassForRental(rental.status)}">${rental.status}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="viewRental(${rental.id})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    ${rental.status === 'PENDING' ? `
+                                        <button class="btn btn-sm btn-success" onclick="approveRental(${rental.id})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="rejectRental(${rental.id})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    ` : ''}
+                                </td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching rentals:', error);
+                        showAlert('danger', 'Error loading rentals. Please try again.');
+                    });
+            }
+
+            function getBadgeClassForRental(status) {
+                switch (status) {
+                    case 'PENDING': return 'bg-warning';
+                    case 'APPROVED': return 'bg-success';
+                    case 'REJECTED': return 'bg-danger';
+                    default: return 'bg-secondary';
+                }
+            }
+
+            function viewRental(rentalId) {
+                // TODO: Implement rental details view
+                console.log('Viewing rental:', rentalId);
+            }
+
+            function approveRental(rentalId) {
+                // TODO: Implement rental approval
+                console.log('Approving rental:', rentalId);
+            }
+
+            function rejectRental(rentalId) {
+                // TODO: Implement rental rejection
+                console.log('Rejecting rental:', rentalId);
             }
 
             // Initialize dashboard when the page loads
