@@ -25,6 +25,11 @@
                         <label class="btn btn-outline-primary" for="rentalsView">
                             <i class="fas fa-home"></i> Rentals
                         </label>
+
+                        <input type="radio" class="btn-check" name="viewType" id="reportsView">
+                        <label class="btn btn-outline-primary" for="reportsView">
+                            <i class="fas fa-flag"></i> Reports
+                        </label>
                     </div>
                 </div>
                 <div class="col-3"></div>
@@ -102,6 +107,23 @@
                                 </label>
                             </div>
                         </div>
+
+                        <!-- Reports Filter Section -->
+                        <div class="filter-section" id="reportsFilterSection" style="display: none;">
+                            <h5 class="filter-title">Report Status</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="UNRESOLVED" id="statusUnresolved" checked>
+                                <label class="form-check-label status-label unresolved" for="statusUnresolved">
+                                    <i class="fas fa-exclamation-circle"></i> Unresolved
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="RESOLVED" id="statusResolved">
+                                <label class="form-check-label status-label resolved" for="statusResolved">
+                                    <i class="fas fa-check-circle"></i> Resolved
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -149,6 +171,9 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                            <div id="reportsTable" style="display: none;">
+                                <!-- Reports will be dynamically inserted here -->
                             </div>
                         </div>
                     </div>
@@ -216,6 +241,39 @@
             .table tbody tr:hover {
                 background-color: rgba(0,0,0,0.02);
             }
+            
+            /* Add styles for reports */
+            .report-card {
+                background: white;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .report-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .report-title {
+                font-size: 1.2rem;
+                font-weight: 500;
+                margin: 0;
+            }
+            .report-meta {
+                color: #666;
+                font-size: 0.9rem;
+            }
+            .report-description {
+                color: #444;
+                margin-bottom: 15px;
+            }
+            .report-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
         </style>
         <script th:inline="javascript">
             function updateDashboard() {
@@ -224,8 +282,10 @@
                 // Hide all filter sections and content
                 document.getElementById('usersFilterSection').style.display = 'none';
                 document.getElementById('rentalsFilterSection').style.display = 'none';
+                document.getElementById('reportsFilterSection').style.display = 'none';
                 document.getElementById('usersTable').style.display = 'none';
                 document.getElementById('rentalsTable').style.display = 'none';
+                document.getElementById('reportsTable').style.display = 'none';
 
                 if (view === 'usersView') {
                     document.getElementById('usersFilterSection').style.display = 'block';
@@ -235,6 +295,10 @@
                     document.getElementById('rentalsFilterSection').style.display = 'block';
                     document.getElementById('rentalsTable').style.display = 'block';
                     fetchRentals();
+                } else if (view === 'reportsView') {
+                    document.getElementById('reportsFilterSection').style.display = 'block';
+                    document.getElementById('reportsTable').style.display = 'block';
+                    fetchReports();
                 }
             }
 
@@ -541,6 +605,75 @@
                 console.log('Rejecting rental:', rentalId);
             }
 
+            function fetchReports() {
+                const contentArea = document.querySelector('.content-card');
+                contentArea.innerHTML = '<div class="loading-spinner"><div class="spinner-border text-primary" role="status"></div></div>';
+
+                fetch('/api/reports/unresolved')
+                    .then(response => response.json())
+                    .then(reports => {
+                        let html = '<div class="content-header"><h2><i class="fas fa-flag"></i> Reports</h2></div><div class="dashboard-items">';
+                        
+                        if (reports.length === 0) {
+                            html += '<div class="alert alert-info">No reports found.</div>';
+                        } else {
+                            reports.forEach(report => {
+                                html += `
+                                    <div class="report-card">
+                                        <div class="report-header">
+                                            <h3 class="report-title">${report.title}</h3>
+                                            <span class="badge ${report.resolved ? 'bg-success' : 'bg-warning'}">${report.resolved ? 'Resolved' : 'Unresolved'}</span>
+                                        </div>
+                                        <div class="report-meta">
+                                            Reported by: ${report.tenant.user.username} | ${new Date(report.createdAt).toLocaleString()}
+                                        </div>
+                                        <div class="report-description">
+                                            ${report.description}
+                                        </div>
+                                        ${!report.resolved ? `
+                                            <div class="report-actions">
+                                                <button class="btn btn-success btn-sm" onclick="resolveReport(${report.id})">
+                                                    <i class="fas fa-check"></i> Mark as Resolved
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            });
+                        }
+                        
+                        html += '</div>';
+                        contentArea.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching reports:', error);
+                        showAlert('danger', 'Failed to load reports');
+                    });
+            }
+
+            function resolveReport(reportId) {
+                fetch(`/api/reports/${reportId}/resolve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to resolve report');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    showAlert('success', 'Report marked as resolved');
+                    fetchReports();
+                })
+                .catch(error => {
+                    console.error('Error resolving report:', error);
+                    showAlert('danger', 'Failed to resolve report');
+                });
+            }
+
             // Initialize dashboard when the page loads
             document.addEventListener('DOMContentLoaded', function() {
                 console.log('Page loaded, initializing dashboard...');
@@ -548,7 +681,22 @@
                 
                 // Add event listeners for view type changes
                 document.querySelectorAll('input[name="viewType"]').forEach(radio => {
-                    radio.addEventListener('change', updateDashboard);
+                    radio.addEventListener('change', function() {
+                        document.getElementById('usersFilterSection').style.display = 'none';
+                        document.getElementById('rentalsFilterSection').style.display = 'none';
+                        document.getElementById('reportsFilterSection').style.display = 'none';
+
+                        if (this.id === 'usersView') {
+                            document.getElementById('usersFilterSection').style.display = 'block';
+                            fetchUsers();
+                        } else if (this.id === 'rentalsView') {
+                            document.getElementById('rentalsFilterSection').style.display = 'block';
+                            fetchRentals();
+                        } else if (this.id === 'reportsView') {
+                            document.getElementById('reportsFilterSection').style.display = 'block';
+                            fetchReports();
+                        }
+                    });
                 });
             });
         </script>
