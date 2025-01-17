@@ -1,5 +1,6 @@
 package gr.hua.dit.rentalapp.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import gr.hua.dit.rentalapp.enums.PropertyType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "properties")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Property {
 
     @Id
@@ -17,10 +19,12 @@ public class Property {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "landlord_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "properties", "visits", "password"})
     private Landlord owner;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pendingProperties", "password"})
     private Administrator verifiedBy;
 
     @NotBlank
@@ -50,7 +54,7 @@ public class Property {
     @NotBlank
     private String postalCode;
 
-    @NotBlank
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @NotNull

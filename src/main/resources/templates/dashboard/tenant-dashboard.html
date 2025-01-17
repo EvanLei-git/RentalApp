@@ -91,6 +91,7 @@
         .status-label.scheduled i { color: #6366f1; }
         .status-label.canceled i { color: #6b7280; }
         .status-label.completed i { color: #10b981; }
+        .status-label.declined i { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -163,6 +164,12 @@
                                 </label>
                             </div>
                             <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="DECLINED" id="visitDeclined" checked>
+                                <label class="form-check-label status-label declined" for="visitDeclined">
+                                    <i class="fas fa-times-circle"></i> DECLINED
+                                </label>
+                            </div>
+                            <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="CANCELED" id="visitCanceled" checked>
                                 <label class="form-check-label status-label canceled" for="visitCanceled">
                                     <i class="fas fa-ban"></i> CANCELED
@@ -178,27 +185,14 @@
 
                         <!-- Date Range Filter -->
                         <div class="filter-section">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="filter-title mb-0">Date Range</h5>
-                                <button class="btn btn-sm btn-link text-danger" id="clearDates">
-                                    <i class="fas fa-times"></i> Clear
-                                </button>
+                            <h5 class="filter-title">Date Range</h5>
+                            <div class="mb-3">
+                                <label for="dateFrom" class="form-label">From</label>
+                                <input type="date" class="form-control" id="dateFrom">
                             </div>
-                            <div class="mt-3">
-                                <div class="mb-3">
-                                    <label class="form-label">From</label>
-                                    <div class="input-group date-input-group">
-                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                        <input type="date" class="form-control custom-date-input" id="dateFrom">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">To</label>
-                                    <div class="input-group date-input-group">
-                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                        <input type="date" class="form-control custom-date-input" id="dateTo">
-                                    </div>
-                                </div>
+                            <div class="mb-3">
+                                <label for="dateTo" class="form-label">To</label>
+                                <input type="date" class="form-control" id="dateTo">
                             </div>
                         </div>
                     </div>
@@ -210,7 +204,7 @@
                         <div class="content-header">
                             <h2><i class="fas fa-home"></i> My Dashboard</h2>
                             <div class="header-actions">
-                                <button class="btn btn-outline-light" onclick="updateDashboard()">
+                                <button class="btn btn-outline-light" id="refreshButton" onclick="updateDashboard()">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
                             </div>
@@ -270,8 +264,7 @@
                 // Function to check all checkboxes in a container
                 function checkAllFilters(container) {
                     if (container) {
-                        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-                        checkboxes.forEach(checkbox => {
+                        container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                             checkbox.checked = true;
                         });
                     }
@@ -279,8 +272,6 @@
 
                 // Function to show all filters and check all checkboxes
                 function showAndCheckAllFilters() {
-                    const applicationFilter = document.getElementById('applicationStatusFilter');
-                    const visitFilter = document.getElementById('visitStatusFilter');
                     applicationFilter.style.display = 'block';
                     visitFilter.style.display = 'block';
                     checkAllFilters(applicationFilter);
@@ -290,47 +281,44 @@
                 const filterButtons = document.querySelectorAll('input[name="filterType"]');
                 const applicationFilter = document.getElementById('applicationStatusFilter');
                 const visitFilter = document.getElementById('visitStatusFilter');
+                const dateFrom = document.getElementById('dateFrom');
+                const dateTo = document.getElementById('dateTo');
 
+                // Add event listeners
                 filterButtons.forEach(button => {
                     button.addEventListener('change', function() {
-                        // Hide all filters first
-                        applicationFilter.style.display = 'none';
-                        visitFilter.style.display = 'none';
-
-                        // Show relevant filters based on selection
-                        if (this.id === 'applications') {
+                        const selectedFilter = this.id;
+                        
+                        if (selectedFilter === 'all') {
+                            showAndCheckAllFilters();
+                        } else if (selectedFilter === 'applications') {
                             applicationFilter.style.display = 'block';
+                            visitFilter.style.display = 'none';
                             checkAllFilters(applicationFilter);
-                        } else if (this.id === 'visits') {
+                        } else if (selectedFilter === 'visits') {
+                            applicationFilter.style.display = 'none';
                             visitFilter.style.display = 'block';
                             checkAllFilters(visitFilter);
-                        } else if (this.id === 'all') {
-                            showAndCheckAllFilters();
                         }
+                        
                         updateDashboard();
                     });
                 });
 
-                // Initial setup - show and check all filters
-                document.getElementById('all').checked = true;
-                showAndCheckAllFilters();
-
-                // Clear dates button handling
-                document.getElementById('clearDates').addEventListener('click', function() {
-                    document.getElementById('dateFrom').value = '';
-                    document.getElementById('dateTo').value = '';
-                    updateDashboard();
+                // Add event listeners to filters and date inputs
+                [applicationFilter, visitFilter].forEach(filter => {
+                    if (filter) {
+                        filter.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                            checkbox.addEventListener('change', updateDashboard);
+                        });
+                    }
                 });
 
-                // Status checkbox handling
-                const allCheckboxes = document.querySelectorAll('.form-check-input');
-                allCheckboxes.forEach(checkbox => {
-                    checkbox.addEventListener('change', updateDashboard);
+                [dateFrom, dateTo].forEach(input => {
+                    if (input) {
+                        input.addEventListener('change', updateDashboard);
+                    }
                 });
-
-                // Date input handling
-                document.getElementById('dateFrom').addEventListener('change', updateDashboard);
-                document.getElementById('dateTo').addEventListener('change', updateDashboard);
 
                 async function updateDashboard() {
                     const dashboardContent = document.getElementById('dashboardContent');
@@ -344,100 +332,240 @@
                     const selectedFilter = document.querySelector('input[name="filterType"]:checked').id;
                     const applicationStatuses = Array.from(document.querySelectorAll('#applicationStatusFilter input:checked')).map(cb => cb.value);
                     const visitStatuses = Array.from(document.querySelectorAll('#visitStatusFilter input:checked')).map(cb => cb.value);
-                    const dateFrom = document.getElementById('dateFrom').value;
-                    const dateTo = document.getElementById('dateTo').value;
+                    const dateFromValue = dateFrom.value;
+                    const dateToValue = dateTo.value;
 
                     try {
-                        const response = await fetch('/api/applications/tenant/dashboard?' + new URLSearchParams({
-                            filterType: selectedFilter,
-                            applicationStatuses: applicationStatuses,
-                            visitStatuses: visitStatuses,
-                            dateFrom: dateFrom || '',
-                            dateTo: dateTo || ''
-                        }));
+                        let endpoint = '/api/tenant/dashboard';
+                        if (selectedFilter === 'applications') {
+                            endpoint = '/api/tenant/applications';
+                        } else if (selectedFilter === 'visits') {
+                            endpoint = '/api/tenant/visits';
+                        }
+
+                        const response = await fetch(endpoint + '?' + new URLSearchParams({
+                            applicationStatuses: applicationStatuses.join(','),
+                            visitStatuses: visitStatuses.join(','),
+                            dateFrom: dateFromValue || '',
+                            dateTo: dateToValue || ''
+                        }), {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include'
+                        });
+
+                        const responseData = await response.text();
+                        let data;
+                        try {
+                            data = JSON.parse(responseData);
+                        } catch (e) {
+                            throw new Error(responseData || 'Invalid response format');
+                        }
 
                         if (!response.ok) {
-                            throw new Error('Failed to fetch dashboard data');
+                            throw new Error(data.message || data || `HTTP error! status: ${response.status}`);
                         }
 
-                        const data = await response.json();
-                        dashboardContent.innerHTML = '';
+                        let html = '';
 
-                        if (data.length === 0) {
-                            dashboardContent.innerHTML = `
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>No items found matching your filters
+                        if ((!data.applications || data.applications.length === 0) && 
+                            (!data.visits || data.visits.length === 0)) {
+                            html = `
+                                <div class="alert alert-info" role="alert">
+                                    <i class="fas fa-info-circle"></i> No items found matching your filters.
                                 </div>`;
-                            return;
-                        }
-
-                        const template = document.getElementById('dashboardItemTemplate');
-
-                        data.forEach(item => {
-                            const clone = template.content.cloneNode(true);
-                            
-                            // Set property details
-                            clone.querySelector('.property-address').textContent = item.property.address;
-                            clone.querySelector('.bedrooms').textContent = item.property.bedrooms;
-                            clone.querySelector('.bathrooms').textContent = item.property.bathrooms;
-                            clone.querySelector('.rent-amount').textContent = item.property.rentAmount;
-                            
-                            // Format and set date
-                            const date = new Date(item.date);
-                            clone.querySelector('.item-date').textContent = date.toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            });
-
-                            // Set status badge
-                            const badge = clone.querySelector('.status-badge');
-                            const status = item.status;
-                            badge.textContent = status;
-                            
-                            // Add appropriate status class
-                            if (item.type === 'APPLICATION') {
-                                switch(status) {
-                                    case 'PENDING':
-                                        badge.classList.add('bg-warning');
-                                        break;
-                                    case 'APPROVED':
-                                        badge.classList.add('bg-success');
-                                        break;
-                                    case 'REJECTED':
-                                        badge.classList.add('bg-danger');
-                                        break;
+                        } else {
+                            if (selectedFilter === 'all') {
+                                // Combine and sort applications and visits by date
+                                const timeline = [];
+                                if (data.applications) {
+                                    timeline.push(...data.applications.map(app => ({
+                                        type: 'application',
+                                        date: new Date(app.applicationDate),
+                                        data: app
+                                    })));
                                 }
-                            } else { // VISIT
-                                switch(status) {
-                                    case 'REQUESTED':
-                                        badge.classList.add('bg-info');
-                                        break;
-                                    case 'SCHEDULED':
-                                        badge.classList.add('bg-primary');
-                                        break;
-                                    case 'CANCELED':
-                                        badge.classList.add('bg-secondary');
-                                        break;
-                                    case 'COMPLETED':
-                                        badge.classList.add('bg-success');
-                                        break;
+                                if (data.visits) {
+                                    timeline.push(...data.visits.map(visit => ({
+                                        type: 'visit',
+                                        date: new Date(visit.visitDate),
+                                        data: visit
+                                    })));
+                                }
+                                
+                                // Sort by date, most recent first
+                                timeline.sort((a, b) => b.date - a.date);
+
+                                html = '<div class="timeline">';
+                                timeline.forEach(item => {
+                                    if (item.type === 'application') {
+                                        html += generateApplicationHtml(item.data);
+                                    } else {
+                                        html += generateVisitHtml(item.data);
+                                    }
+                                });
+                                html += '</div>';
+                            } else if (selectedFilter === 'applications') {
+                                if (data.applications && data.applications.length > 0) {
+                                    html = '<div class="applications-list">';
+                                    data.applications.forEach(app => {
+                                        html += generateApplicationHtml(app);
+                                    });
+                                    html += '</div>';
+                                } else {
+                                    html = `
+                                        <div class="alert alert-info" role="alert">
+                                            <i class="fas fa-info-circle"></i> No applications found.
+                                        </div>`;
+                                }
+                            } else if (selectedFilter === 'visits') {
+                                if (data.visits && data.visits.length > 0) {
+                                    html = '<div class="visits-list">';
+                                    data.visits.forEach(visit => {
+                                        html += generateVisitHtml(visit);
+                                    });
+                                    html += '</div>';
+                                } else {
+                                    html = `
+                                        <div class="alert alert-info" role="alert">
+                                            <i class="fas fa-info-circle"></i> No visits found.
+                                        </div>`;
                                 }
                             }
+                        }
 
-                            dashboardContent.appendChild(clone);
-                        });
+                        dashboardContent.innerHTML = html;
                     } catch (error) {
                         console.error('Error:', error);
                         dashboardContent.innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle me-2"></i>Failed to load dashboard data. Please try again.
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-circle"></i> ${error.message}
                             </div>`;
+                        throw error; // Re-throw to handle in the refresh button
                     }
                 }
 
+                function generateApplicationHtml(application) {
+                    const statusColor = getStatusColor(application.status);
+                    return `
+                        <div class="card dashboard-item mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary me-2" title="Application">
+                                            <i class="fas fa-file-alt"></i>
+                                        </span>
+                                        <h5 class="card-title mb-0">${application.property.address}</h5>
+                                    </div>
+                                    <span class="badge ${statusColor}">${application.status}</span>
+                                </div>
+                                <div class="property-details mt-2">
+                                    <p class="mb-1">
+                                        <i class="fas fa-calendar-alt"></i> Applied on ${formatDate(application.applicationDate)}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-home"></i> ${application.property.type}, 
+                                        ${application.property.bedrooms} bed, ${application.property.bathrooms} bath
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-map-marker-alt"></i> ${application.property.city}, ${application.property.country}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+
+                function generateVisitHtml(visit) {
+                    const statusColor = getStatusColor(visit.visitStatus);
+                    return `
+                        <div class="card dashboard-item mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary me-2" title="Visit">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </span>
+                                        <h5 class="card-title mb-0">${visit.property.address}</h5>
+                                    </div>
+                                    <span class="badge ${statusColor}">${visit.visitStatus}</span>
+                                </div>
+                                <div class="property-details mt-2">
+                                    <p class="mb-1">
+                                        <i class="fas fa-calendar-alt"></i> Visit scheduled for ${formatDate(visit.visitDate)}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-home"></i> ${visit.property.type}, 
+                                        ${visit.property.bedrooms} bed, ${visit.property.bathrooms} bath
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-map-marker-alt"></i> ${visit.property.city}, ${visit.property.country}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+
+                function getStatusColor(status) {
+                    switch (status) {
+                        case 'PENDING':
+                            return 'bg-warning text-dark';
+                        case 'REQUESTED':
+                            return 'bg-primary';
+                        case 'APPROVED':
+                        case 'ACCEPTED':
+                            return 'bg-success';
+                        case 'REJECTED':
+                        case 'CANCELLED':
+                            return 'bg-danger';
+                        case 'COMPLETED':
+                            return 'bg-info';
+                        case 'SCHEDULED':
+                            return 'bg-info';
+                        default:
+                            return 'bg-secondary';
+                    }
+                }
+
+                function formatDate(dateString) {
+                    const options = { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    };
+                    return new Date(dateString).toLocaleDateString('en-US', options);
+                }
+
+                // Add event listeners for filter changes
+                document.querySelectorAll('input[name="filterType"]').forEach(radio => {
+                    radio.addEventListener('change', updateDashboard);
+                });
+
+                document.querySelectorAll('#applicationStatusFilter input, #visitStatusFilter input').forEach(checkbox => {
+                    checkbox.addEventListener('change', updateDashboard);
+                });
+
+                dateFrom.addEventListener('change', updateDashboard);
+                dateTo.addEventListener('change', updateDashboard);
+
+                // Add refresh button functionality
+                document.getElementById('refreshButton').addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+                    icon.classList.add('fa-spin');
+                    updateDashboard().finally(() => {
+                        setTimeout(() => {
+                            icon.classList.remove('fa-spin');
+                        }, 500); // Keep spinning for a short moment after refresh
+                    });
+                });
+
                 // Initial dashboard update
-                updateDashboard();
+                window.addEventListener('load', () => {
+                    setTimeout(updateDashboard, 100); // Small delay to ensure DOM is ready
+                });
             });
         </script>
     </th:block>

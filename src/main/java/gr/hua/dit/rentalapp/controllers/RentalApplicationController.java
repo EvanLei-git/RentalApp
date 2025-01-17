@@ -1,9 +1,15 @@
 package gr.hua.dit.rentalapp.controllers;
 
-import gr.hua.dit.rentalapp.entities.RentalApplication;
-import gr.hua.dit.rentalapp.entities.PropertyVisit;
 import gr.hua.dit.rentalapp.enums.ApplicationStatus;
 import gr.hua.dit.rentalapp.enums.VisitStatus;
+import gr.hua.dit.rentalapp.entities.Property;
+import gr.hua.dit.rentalapp.entities.RentalApplication;
+import gr.hua.dit.rentalapp.entities.Tenant;
+import gr.hua.dit.rentalapp.entities.PropertyVisit;
+import gr.hua.dit.rentalapp.repositories.PropertyRepository;
+import gr.hua.dit.rentalapp.repositories.RentalApplicationRepository;
+import gr.hua.dit.rentalapp.repositories.TenantRepository;
+import gr.hua.dit.rentalapp.repositories.PropertyVisitRepository;
 import gr.hua.dit.rentalapp.services.RentalApplicationService;
 import gr.hua.dit.rentalapp.services.PropertyVisitService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,26 +18,41 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 
 @RestController
-@RequestMapping("/api/applications")
+@RequestMapping("/api/rental-applications")
 public class RentalApplicationController {
 
     private final RentalApplicationService applicationService;
     private final PropertyVisitService visitService;
+    private final RentalApplicationRepository rentalApplicationRepository;
+    private final TenantRepository tenantRepository;
+    private final PropertyRepository propertyRepository;
+    private final PropertyVisitRepository visitRepository;
 
     @Autowired
-    public RentalApplicationController(RentalApplicationService applicationService, PropertyVisitService visitService) {
+    public RentalApplicationController(RentalApplicationService applicationService, 
+                                       PropertyVisitService visitService, 
+                                       RentalApplicationRepository rentalApplicationRepository, 
+                                       TenantRepository tenantRepository, 
+                                       PropertyRepository propertyRepository,
+                                       PropertyVisitRepository visitRepository) {
         this.applicationService = applicationService;
         this.visitService = visitService;
+        this.rentalApplicationRepository = rentalApplicationRepository;
+        this.tenantRepository = tenantRepository;
+        this.propertyRepository = propertyRepository;
+        this.visitRepository = visitRepository;
     }
 
     // GET all applications (probably restricted to Admin or Landlord)
@@ -173,5 +194,58 @@ public class RentalApplicationController {
         });
 
         return ResponseEntity.ok(combinedResults);
+    }
+
+    @PostMapping("/submit")
+    public ResponseEntity<?> submitApplication(@RequestBody Map<String, Object> request, Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            Long propertyId = Long.parseLong(request.get("propertyId").toString());
+
+            Optional<Tenant> tenantOpt = tenantRepository.findByUsername(username);
+            Optional<Property> propertyOpt = propertyRepository.findById(propertyId);
+
+            if (tenantOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Tenant not found"));
+            }
+
+            if (propertyOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Property not found"));
+            }
+
+            Tenant tenant = tenantOpt.get();
+            Property property = propertyOpt.get();
+
+            // Check if application already exists
+            List<RentalApplication> existingApplications = rentalApplicationRepository.findByPropertyPropertyId(propertyId);
+            boolean hasExistingApplication = existingApplications.stream()
+                .filter(app -> app.getApplicant().getUserId().equals(tenant.getUserId()))
+                .anyMatch(app -> app.getStatus() == ApplicationStatus.PENDING);
+
+            if (hasExistingApplication) {
+                return ResponseEntity.badRequest().body(Map.of("message", "You already have a pending application for this property"));
+            }
+
+            // Create new application
+            RentalApplication application = new RentalApplication();
+            application.setApplicant(tenant);
+            application.setProperty(property);
+            application.setStatus(ApplicationStatus.PENDING);
+            application.setApplicationDate(new Date());
+
+            // Save application
+            rentalApplicationRepository.save(application);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Application submitted successfully");
+            response.put("applicationId", application.getApplicationId());
+            response.put("status", "PENDING");
+            response.put("isVerified", tenant.isVerified());
+            response.put("hasEmploymentDetails", tenant.getEmploymentStatus() != null && !tenant.getEmploymentStatus().isEmpty());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to submit application: " + e.getMessage()));
+        }
     }
 }

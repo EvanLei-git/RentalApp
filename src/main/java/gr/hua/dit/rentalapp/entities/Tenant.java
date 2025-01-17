@@ -1,5 +1,7 @@
 package gr.hua.dit.rentalapp.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -9,10 +11,12 @@ import java.util.List;
 
 @Entity
 @Table(name = "tenants")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Tenant extends User {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by_id") // refering to the Administrator id that verified the tenant
+    @JsonIgnore
     private Administrator verifiedBy;
 
     @PositiveOrZero
@@ -43,12 +47,14 @@ public class Tenant extends User {
     private boolean pendingVerification = false;
 
     @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<RentalApplication> submittedApplications = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(name = "tenant_viewed_properties",
             joinColumns = @JoinColumn(name = "tenant_id"),
             inverseJoinColumns = @JoinColumn(name = "property_id"))
+    @JsonIgnore
     private List<Property> viewedProperties = new ArrayList<>();
 
     // Constructors

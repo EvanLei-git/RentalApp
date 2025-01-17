@@ -2,6 +2,7 @@ package gr.hua.dit.rentalapp.controllers;
 
 import gr.hua.dit.rentalapp.entities.User;
 import gr.hua.dit.rentalapp.entities.Tenant;
+import gr.hua.dit.rentalapp.entities.Landlord;
 import gr.hua.dit.rentalapp.services.UserAuthService;
 import gr.hua.dit.rentalapp.services.PostgresLargeObjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
@@ -19,10 +21,22 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.http.MediaType;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import gr.hua.dit.rentalapp.repositories.TenantRepository;
+import gr.hua.dit.rentalapp.repositories.RentalApplicationRepository;
+import gr.hua.dit.rentalapp.repositories.PropertyVisitRepository;
+import gr.hua.dit.rentalapp.entities.RentalApplication;
+import gr.hua.dit.rentalapp.entities.PropertyVisit;
 
 @Controller
 public class UserController {
@@ -30,14 +44,23 @@ public class UserController {
     private final UserAuthService userService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final PostgresLargeObjectService largeObjectService;
+    private final TenantRepository tenantRepository;
+    private final RentalApplicationRepository rentalApplicationRepository;
+    private final PropertyVisitRepository propertyVisitRepository;
 
     @Autowired
     public UserController(UserAuthService userService, 
                          BCryptPasswordEncoder passwordEncoder,
-                         PostgresLargeObjectService largeObjectService) {
+                         PostgresLargeObjectService largeObjectService,
+                         TenantRepository tenantRepository,
+                         RentalApplicationRepository rentalApplicationRepository,
+                         PropertyVisitRepository propertyVisitRepository) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.largeObjectService = largeObjectService;
+        this.tenantRepository = tenantRepository;
+        this.rentalApplicationRepository = rentalApplicationRepository;
+        this.propertyVisitRepository = propertyVisitRepository;
     }
 
     // Web Interface Endpoints
@@ -219,6 +242,45 @@ public class UserController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @GetMapping("/verification-status")
+    @ResponseBody
+    public Map<String, Object> getVerificationStatus() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+        Optional<User> userOpt = userService.findByUsername(username);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        if (userOpt.isPresent() && userOpt.get() instanceof Tenant) {
+            Tenant tenant = (Tenant) userOpt.get();
+            boolean hasUploadedDocs = tenant.getIdFrontImageOid() != null && tenant.getIdBackImageOid() != null;
+            
+            response.put("isVerified", tenant.isVerified());
+            response.put("hasEmploymentDetails", tenant.getEmploymentStatus() != null && !tenant.getEmploymentStatus().isEmpty());
+            response.put("hasIdDocuments", hasUploadedDocs);
+            response.put("isPendingVerification", tenant.isPendingVerification());
+            response.put("idDocumentStatus", getIdDocumentStatus(tenant));
+        } else {
+            response.put("isVerified", false);
+            response.put("hasEmploymentDetails", false);
+            response.put("hasIdDocuments", false);
+            response.put("isPendingVerification", false);
+            response.put("idDocumentStatus", "not_uploaded");
+        }
+        
+        return response;
+    }
+
+    private String getIdDocumentStatus(Tenant tenant) {
+        if (tenant.isVerified()) {
+            return "verified";
+        }
+        if (tenant.getIdFrontImageOid() != null && tenant.getIdBackImageOid() != null) {
+            return "pending";
+        }
+        return "not_uploaded";
     }
 
     // REST API Endpoints

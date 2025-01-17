@@ -1,5 +1,6 @@
 package gr.hua.dit.rentalapp.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Date;
 import gr.hua.dit.rentalapp.enums.ApplicationStatus;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "rental_applications")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class RentalApplication {
 
     @Id
@@ -15,19 +17,19 @@ public class RentalApplication {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications", "password"})
     private Tenant applicant;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications"})
     private Property property;
 
     @Enumerated(EnumType.STRING)
     @NotNull
     private ApplicationStatus status;
 
-
-
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date applicationDate;
 
     // Constructors

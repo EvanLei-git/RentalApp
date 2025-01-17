@@ -207,6 +207,24 @@
             color: #6b7280;
             font-style: italic;
         }
+        .highlight-section {
+            border: 2px solid #28a745 !important;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        .status-icon {
+            margin-left: 5px;
+            cursor: help;
+        }
+        .status-icon.pending {
+            color: #6c757d;  /* grey */
+        }
+        .status-icon.not-verified {
+            color: #dc3545;  /* red */
+        }
+        .status-icon.verified {
+            color: #28a745;  /* green */
+        }
     </style>
 </head>
 <body>
@@ -283,9 +301,15 @@
                 
                 <!-- Tenant specific fields -->
                 <div th:if="${isTenant}" class="tenant-fields">
-                    <div class="form-section">
+                    <div class="form-section" id="employmentDetailsSection">
                         <div class="form-section-title">
                             <i class="fas fa-briefcase"></i> Employment Details
+                            <span th:if="${tenant.employmentStatus != null && !tenant.employmentStatus.isEmpty()}">
+                                <i class="fas fa-check-circle status-icon verified" title="Provided"></i>
+                            </span>
+                            <span th:if="${tenant.employmentStatus == null || tenant.employmentStatus.isEmpty()}">
+                                <i class="fas fa-exclamation-circle status-icon not-verified" title="Not Provided"></i>
+                            </span>
                         </div>
                         <div class="form-group">
                             <label for="monthlyIncome">Monthly Income</label>
@@ -301,9 +325,18 @@
                     </div>
                     
                     <!-- ID Document Section -->
-                    <div class="form-section">
+                    <div class="form-section" id="idDocumentsSection">
                         <div class="form-section-title">
                             <i class="fas fa-id-card"></i> ID Documents
+                            <span th:if="${tenant.verified}">
+                                <i class="fas fa-check-circle status-icon verified" title="Verified"></i>
+                            </span>
+                            <span th:if="${!tenant.verified && tenant.pendingVerification}">
+                                <i class="fas fa-question-circle status-icon pending" title="Pending Verification Process"></i>
+                            </span>
+                            <span th:if="${!tenant.verified && !tenant.pendingVerification}">
+                                <i class="fas fa-exclamation-circle status-icon not-verified" title="Not Verified"></i>
+                            </span>
                         </div>
                         
                         <!-- Front ID -->
@@ -523,6 +556,26 @@
                 }
             });
         }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check URL parameters for highlighting
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlight = urlParams.get('highlight');
+            
+            if (highlight === 'verification') {
+                // Highlight both ID documents and employment details sections
+                document.querySelector('#idDocumentsSection').classList.add('highlight-section');
+                document.querySelector('#employmentDetailsSection').classList.add('highlight-section');
+                
+                // Scroll to the first highlighted section
+                document.querySelector('#idDocumentsSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (highlight === 'employment') {
+                // Highlight only employment details section
+                document.querySelector('#employmentDetailsSection').classList.add('highlight-section');
+                document.querySelector('#employmentDetailsSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,5 +1,7 @@
 package gr.hua.dit.rentalapp.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,17 +19,21 @@ public class PropertyVisit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications"})
     private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "visits", "applications", "password"})
     private Tenant tenant;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "landlord_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "properties", "visits", "password"})
     private Landlord landlord;
 
     @Column(name = "visit_date")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date visitDate;
 
     @Column(name = "visit_status")

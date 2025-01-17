@@ -9,6 +9,80 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="/css/property-details.css" rel="stylesheet">
+    <style>
+        .status-icon {
+            margin-left: 5px;
+            cursor: help;
+        }
+        .status-icon.pending {
+            color: #6c757d;  /* grey */
+        }
+        .status-icon.not-verified {
+            color: #dc3545;  /* red */
+        }
+        .status-icon.verified {
+            color: #28a745;  /* green */
+        }
+        .verification-popup {
+            text-align: left;
+            padding: 20px;
+        }
+        .verification-popup .title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .verification-popup .requirements {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .verification-popup .requirements ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .verification-popup .requirements li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .verification-popup .requirements i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .verification-popup .note {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+        }
+        .rental-confirmation {
+            text-align: center;
+            padding: 20px;
+        }
+        .rental-confirmation .title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .rental-confirmation .update-employment {
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .rental-confirmation .update-employment:hover {
+            background: #e9ecef;
+        }
+    </style>
 </head>
 <body>
     <!-- Include Header -->
@@ -71,10 +145,9 @@
                                                 data-bs-target="#scheduleVisitModal">
                                             <i class="far fa-calendar-alt me-2"></i> Schedule Visit
                                         </button>
-                                        <button class="btn rent-btn"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#rentModal">
-                                            <i class="fas fa-key me-2"></i> Rent Apartment
+                                        <button class="btn rent-btn" 
+                                                onclick="checkVerificationAndRent()">
+                                            <i class="fas fa-home me-2"></i> Rent Apartment
                                         </button>
                                         <div id="scheduledVisitText" class="mt-2 text-muted" style="display: none;">
                                             Your scheduled visit is for: <span id="scheduledVisitTime"></span>
@@ -150,14 +223,187 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        let takenTimeSlots = new Set();
-        let hasScheduledVisit = false;
-        let currentVisitDateTime = null;
+        async function checkVerificationAndRent() {
+            try {
+                const response = await fetch('/verification-status');
+                const data = await response.json();
+                
+                if (!data.isVerified) {
+                    Swal.fire({
+                        title: 'Verification Required',
+                        html: `
+                            <div class="verification-popup">
+                                <div class="title">
+                                    <i class="fas fa-shield-alt"></i> Account Verification
+                                </div>
+                                <p>To ensure a secure and trustworthy rental experience, we need to verify your identity.</p>
+                                <div class="requirements">
+                                    <strong>Required Documents:</strong>
+                                    <ul>
+                                        <li>
+                                            <i class="fas fa-id-card text-primary"></i>
+                                            ID Documents (Front & Back)
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-briefcase text-primary"></i>
+                                            Employment Details
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="note">
+                                    <i class="fas fa-info-circle"></i>
+                                    Verification helps landlords make informed decisions and ensures a smooth rental process.
+                                </div>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fas fa-user-check"></i> Update Verification',
+                        cancelButtonText: '<i class="fas fa-arrow-right"></i> Continue without Verification',
+                        showDenyButton: true,
+                        denyButtonText: '<i class="fas fa-times"></i> Cancel',
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        denyButtonColor: '#dc3545',
+                        width: '600px'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/profile/edit?highlight=verification';
+                        } else if (result.dismiss === Swal.DismissReason.cancel) {
+                            submitRentalRequest();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Confirm Rental Request',
+                        html: `
+                            <div class="rental-confirmation">
+                                <div class="title">
+                                    <i class="fas fa-home"></i> Ready to Submit
+                                </div>
+                                <p>Would you like to proceed with the rental request?</p>
+                                <div class="update-employment" onclick="window.location.href='/profile/edit?highlight=employment'">
+                                    <i class="fas fa-briefcase"></i>
+                                    <strong>${data.hasEmploymentDetails ? 'Update Employment Details' : 'Add Employment Details'}</strong>
+                                    <p class="mb-0 text-muted">
+                                        ${data.hasEmploymentDetails ? 
+                                            'You can update your employment information if needed' : 
+                                            'Adding employment information can improve your chances'}
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fas fa-check"></i> Confirm Request',
+                        cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#dc3545',
+                        width: '500px'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitRentalRequest();
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking verification status:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to check verification status'
+                });
+            }
+        }
+
+        async function submitRentalRequest() {
+            try {
+                // Get propertyId from URL path
+                const pathParts = window.location.pathname.split('/');
+                const propertyId = pathParts[pathParts.indexOf('property') + 1];
+                
+                const response = await fetch('/api/rental-applications/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        propertyId: propertyId
+                    })
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Your rental application has been submitted successfully!',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#28a745',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirect to dashboard and set up a function to trigger applications tab
+                            window.location.href = '/dashboard';
+                            // Add a small delay to ensure the dashboard is loaded
+                            setTimeout(() => {
+                                const applicationsRadio = document.querySelector('input[name="filterType"][id="applications"]');
+                                if (applicationsRadio) {
+                                    applicationsRadio.checked = true;
+                                    // Trigger change event to update dashboard
+                                    applicationsRadio.dispatchEvent(new Event('change'));
+                                }
+                            }, 500);
+                        }
+                    });
+                } else {
+                    const errorData = await response.json();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorData.message || 'Failed to submit rental application'
+                    });
+                }
+            } catch (error) {
+                console.error('Error submitting rental application:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to submit rental application'
+                });
+            }
+        }
+
+        function showRentalConfirmation(hasEmploymentDetails = true) {
+            Swal.fire({
+                title: 'Confirm Rental Request',
+                html: `
+                    <div class="rental-confirmation">
+                        <div class="title">
+                            <i class="fas fa-home"></i> Ready to Submit
+                        </div>
+                        <p>Would you like to proceed with the rental request?</p>
+                        <div class="update-employment" onclick="window.location.href='/profile/edit?highlight=employment'">
+                            <i class="fas fa-briefcase"></i>
+                            <strong>${hasEmploymentDetails ? 'Update Employment Details' : 'Add Employment Details'}</strong>
+                            <p class="mb-0 text-muted">
+                                ${hasEmploymentDetails ? 
+                                    'You can update your employment information if needed' : 
+                                    'Adding employment information can improve your chances'}
+                            </p>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-check"></i> Confirm Request',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#dc3545',
+                width: '500px'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitRentalRequest();
+                }
+            });
+        }
 
         async function loadCurrentVisit() {
             try {
@@ -166,15 +412,11 @@
                 const response = await fetch(`/api/visits/current-visit/${propertyId}?username=[[${#authentication.name}]]`);
                 if (response.ok) {
                     const visit = await response.json();
-                    if (visit && visit.visitId) {
-                        hasScheduledVisit = true;
-                        currentVisitDateTime = visit.visitDate;
-
-
-                        // Show scheduled visit text
-                        document.getElementById('scheduledVisitText').style.display = 'block';
-                        document.getElementById('scheduledVisitTime').textContent = formatDateTime(visit.visitDate);
-                    }
+                    hasScheduledVisit = true;
+                    currentVisitDateTime = visit.visitDate;
+                    console.log('Loaded visit:', visit); // Debug log
+                    console.log('Current visit datetime:', currentVisitDateTime); // Debug log
+                    updateScheduleButton();
                 }
             } catch (error) {
                 console.error('Error loading current visit:', error);
@@ -185,7 +427,7 @@
             const scheduleBtn = document.querySelector('.schedule-btn:not(#cancelVisitBtn)');
             const cancelBtn = document.getElementById('cancelVisitBtn');
             const scheduledVisitText = document.getElementById('scheduledVisitText');
-
+            
             if (hasScheduledVisit && currentVisitDateTime) {
                 scheduleBtn.innerHTML = '<i class="far fa-calendar-alt me-2"></i> Update Visit';
                 scheduleBtn.classList.remove('btn-primary');
@@ -252,23 +494,6 @@
                 });
             }
         }
-
-        //async function loadCurrentVisit() {
-        //   try {
-        //        const propertyId = '[[${property.propertyId}]]';
-        //        const response = await fetch(`/api/visits/current-visit/${propertyId}?username=[[${#authentication.name}]]`);
-        //        if (response.ok) {
-        //            const visit = await response.json();
-        //            hasScheduledVisit = true;
-        //            currentVisitDateTime = visit.visitDate;
-        //            console.log('Loaded visit:', visit); // Debug log
-        //            console.log('Current visit datetime:', currentVisitDateTime); // Debug log
-        //            updateScheduleButton();
-        //        }
-        //    } catch (error) {
-        //        console.error('Error loading current visit:', error);
-        //    }
-        //}
 
         async function scheduleVisit() {
             const selectedDate = document.getElementById('calendar').value;
@@ -599,5 +824,10 @@
 
         });
     </script>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>
