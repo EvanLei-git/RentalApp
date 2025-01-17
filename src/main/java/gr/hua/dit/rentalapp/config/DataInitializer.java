@@ -4,6 +4,7 @@ import gr.hua.dit.rentalapp.entities.*;
 import gr.hua.dit.rentalapp.enums.ApplicationStatus;
 import gr.hua.dit.rentalapp.enums.PropertyType;
 import gr.hua.dit.rentalapp.enums.RoleType;
+import gr.hua.dit.rentalapp.enums.VisitStatus;
 import gr.hua.dit.rentalapp.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -41,6 +43,9 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private PropertyVisitRepository propertyVisitRepository;
+
     @Override
     public void run(String... args) {
         setupDefaultRoles();
@@ -56,8 +61,8 @@ public class DataInitializer implements CommandLineRunner {
                 Tenant tenant2 = createTenant("testtenant2", "test_tenant2@example.com", "test", "Test", "Tenant2", "Self-Employed", 3000.0);
                 
                 // Create test landlords
-                Landlord landlord1 = createLandlord("test_landlord1", "test_landlord1@example.com", "test", "Test", "Landlord1", "1234567890", admin);
-                Landlord landlord2 = createLandlord("test_landlord2", "test_landlord2@example.com", "test", "Test", "Landlord2", "0987654321", admin);
+                Landlord landlord1 = createLandlord("testlandlord1", "test_landlord1@example.com", "test", "Test", "Landlord1", "1234567890", admin);
+                Landlord landlord2 = createLandlord("testlandlord2", "test_landlord2@example.com", "test", "Test", "Landlord2", "0987654321", admin);
 
                 // Create properties for Test Landlord1
                 Property property1 = createTestProperty(landlord1, "Test Address 1", "Athens", "Greece", 
@@ -81,10 +86,21 @@ public class DataInitializer implements CommandLineRunner {
                         PropertyType.APARTMENT, 900.0, 2, 2, 95.0, true, true, false, true,
                         "Test Property 5 - Unrented Apartment", false, false);
 
-                // Create rental applications
-                createRentalApplication(property4, tenant1, ApplicationStatus.APPROVED);
+                // Create initial rental applications
+                createRentalApplication(property1, tenant1, ApplicationStatus.APPROVED);
                 createRentalApplication(property2, tenant2, ApplicationStatus.PENDING);
                 createRentalApplication(property5, tenant1, ApplicationStatus.PENDING);
+
+                // Create more test rental applications
+                createRentalApplication(property1, tenant1, ApplicationStatus.PENDING);
+                createRentalApplication(property1, tenant2, ApplicationStatus.APPROVED);
+                createRentalApplication(property2, tenant1, ApplicationStatus.REJECTED);
+
+                // Create test property visits
+                createPropertyVisit(property1, tenant1, landlord1, Date.from(Instant.now().plus(2, ChronoUnit.DAYS)), VisitStatus.SCHEDULED);
+                createPropertyVisit(property1, tenant2, landlord1, Date.from(Instant.now().plus(3, ChronoUnit.DAYS)), VisitStatus.COMPLETED);
+                createPropertyVisit(property2, tenant1, landlord1, Date.from(Instant.now().plus(1, ChronoUnit.DAYS)), VisitStatus.CANCELED);
+                createPropertyVisit(property2, tenant2, landlord1, Date.from(Instant.now().plus(4, ChronoUnit.DAYS)), VisitStatus.REQUESTED);
 
                 // Create some test reports
                 Report report1 = new Report();
@@ -207,8 +223,12 @@ public class DataInitializer implements CommandLineRunner {
     private RentalApplication createRentalApplication(Property property, Tenant tenant, ApplicationStatus status) {
         RentalApplication application = new RentalApplication(tenant, property);
         application.setStatus(status);
-        application.setApplicationDate(new Date());
         return rentalApplicationRepository.save(application);
+    }
+
+    private PropertyVisit createPropertyVisit(Property property, Tenant tenant, Landlord landlord, Date visitDate, VisitStatus status) {
+        PropertyVisit visit = new PropertyVisit(property, tenant, landlord, visitDate, status);
+        return propertyVisitRepository.save(visit);
     }
 
     private String getPostalCodeForCity(String city) {
