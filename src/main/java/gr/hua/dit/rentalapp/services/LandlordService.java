@@ -2,21 +2,36 @@ package gr.hua.dit.rentalapp.services;
 
 import gr.hua.dit.rentalapp.entities.Landlord;
 import gr.hua.dit.rentalapp.entities.Property;
+import gr.hua.dit.rentalapp.entities.PropertyVisit;
+import gr.hua.dit.rentalapp.entities.RentalApplication;
 import gr.hua.dit.rentalapp.repositories.LandlordRepository;
+import gr.hua.dit.rentalapp.repositories.PropertyRepository;
+import gr.hua.dit.rentalapp.repositories.PropertyVisitRepository;
+import gr.hua.dit.rentalapp.repositories.RentalApplicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LandlordService {
 
     private final LandlordRepository landlordRepository;
+    private final PropertyRepository propertyRepository;
+    private final RentalApplicationRepository rentalApplicationRepository;
+    private final PropertyVisitRepository propertyVisitRepository;
 
     @Autowired
-    public LandlordService(LandlordRepository landlordRepository) {
+    public LandlordService(LandlordRepository landlordRepository,
+                          PropertyRepository propertyRepository,
+                          RentalApplicationRepository rentalApplicationRepository,
+                          PropertyVisitRepository propertyVisitRepository) {
         this.landlordRepository = landlordRepository;
+        this.propertyRepository = propertyRepository;
+        this.rentalApplicationRepository = rentalApplicationRepository;
+        this.propertyVisitRepository = propertyVisitRepository;
     }
 
     public List<Landlord> getAllLandlords() {
@@ -52,7 +67,32 @@ public class LandlordService {
     }
 
     public List<Property> getPropertiesByLandlord(Long landlordId) {
-        Landlord landlord = getLandlordById(landlordId);
-        return landlord != null ? landlord.getProperties() : new ArrayList<>();
+        return propertyRepository.findByOwnerUserId(landlordId);
+    }
+
+    public List<RentalApplication> getRentalApplicationsForLandlord(Long landlordId) {
+        // Get all properties owned by the landlord
+        List<Property> properties = getPropertiesByLandlord(landlordId);
+        if (properties.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Get all applications for these properties
+        return properties.stream()
+            .flatMap(property -> rentalApplicationRepository.findByPropertyPropertyId(property.getPropertyId()).stream())
+            .collect(Collectors.toList());
+    }
+
+    public List<PropertyVisit> getPropertyVisitsForLandlord(Long landlordId) {
+        // Get all properties owned by the landlord
+        List<Property> properties = getPropertiesByLandlord(landlordId);
+        if (properties.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Get all visits for these properties
+        return properties.stream()
+            .flatMap(property -> propertyVisitRepository.findByProperty_PropertyId(property.getPropertyId()).stream())
+            .collect(Collectors.toList());
     }
 }

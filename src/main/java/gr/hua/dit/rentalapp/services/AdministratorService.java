@@ -46,11 +46,6 @@ public class AdministratorService {
         return adminRepository.findById(id).orElse(null);
     }
 
-    public void createAdministrator(Administrator administrator) {
-        // Possibly encode password, set role to ROLE_ADMIN
-        adminRepository.save(administrator);
-    }
-
     public void verifyTenant(Long adminId, Long tenantId) {
         Administrator admin = adminRepository.findById(adminId).orElse(null);
         if (admin == null) {
@@ -94,8 +89,6 @@ public class AdministratorService {
                 "firstName", rental.getTenant().getFirstName(),
                 "lastName", rental.getTenant().getLastName()
             ));
-            rentalMap.put("startDate", rental.getStartDate());
-            rentalMap.put("endDate", rental.getEndDate());
             rentalMap.put("status", rental.getStatus());
             return rentalMap;
         }).collect(Collectors.toList());

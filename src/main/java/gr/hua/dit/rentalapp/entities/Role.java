@@ -39,6 +39,4 @@ public class Role {
     public void setName(RoleType name) {
         this.name = name;
     }
-
-    public Boolean orElse(Boolean flag) {return flag;}
 }

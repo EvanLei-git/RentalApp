@@ -10,8 +10,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,32 +37,22 @@ public class AuthController {
     @Transactional(rollbackFor = Exception.class)
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestParam String username,
-                             @RequestParam String password,
-                             @RequestParam String email,
-                             @RequestParam String firstName,
-                             @RequestParam String lastName,
-                             @RequestParam String role,
-                             @RequestParam(required = false) Double monthlyIncome,
-                             @RequestParam(required = false) String employmentStatus,
-                             @RequestParam(required = false) MultipartFile idFrontImage,
-                             @RequestParam(required = false) MultipartFile idBackImage) {
+                                          @RequestParam String password,
+                                          @RequestParam String email,
+                                          @RequestParam String firstName,
+                                          @RequestParam String lastName,
+                                          @RequestParam String role,
+                                          @RequestParam(required = false) Double monthlyIncome,
+                                          @RequestParam(required = false) String employmentStatus) {
         try {
-            // Validate file sizes if files are present
-            if (idFrontImage != null && !idFrontImage.isEmpty() && idFrontImage.getSize() > 2 * 1024 * 1024) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Front ID image must be less than 2MB"));
-            }
-            if (idBackImage != null && !idBackImage.isEmpty() && idBackImage.getSize() > 2 * 1024 * 1024) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Back ID image must be less than 2MB"));
-            }
-
             User user = userAuthService.register(username, password, email, firstName, lastName, role,
-                                   monthlyIncome, employmentStatus, idFrontImage, idBackImage);
-            
+                    monthlyIncome, employmentStatus);
+
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Registration successful! Please login.");
             response.put("userId", user.getUserId());
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             log.error("Registration error", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

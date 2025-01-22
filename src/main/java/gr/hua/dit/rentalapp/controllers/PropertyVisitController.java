@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/visits")
@@ -124,17 +124,19 @@ public class PropertyVisitController {
             
             switch (action.toUpperCase()) {
                 case "APPROVE":
+                case "SCHEDULE":
                     updatedVisit = visitService.approveVisit(id);
                     break;
                 case "COMPLETE":
                     updatedVisit = visitService.completeVisit(id);
                     break;
                 case "CANCEL":
+                case "DECLINE":
                     updatedVisit = visitService.cancelVisit(id);
                     break;
                 default:
                     Map<String, String> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "Invalid action. Must be one of: APPROVE, COMPLETE, CANCEL");
+                    errorResponse.put("error", "Invalid action. Must be one of: APPROVE/SCHEDULE, COMPLETE, CANCEL/DECLINE");
                     return ResponseEntity.badRequest().body(errorResponse);
             }
             
@@ -148,13 +150,74 @@ public class PropertyVisitController {
 
     // GET: get taken time slots for a property on a specific date
     @GetMapping("/taken-slots/{propertyId}")
-    public ResponseEntity<List<String>> getTakenTimeSlots(
+    public ResponseEntity<Map<String, Object>> getTimeSlots(
             @PathVariable Long propertyId,
             @RequestParam String date) {
-        List<String> takenSlots = visitService.getTakenTimeSlots(propertyId, date);
-        return ResponseEntity.ok(takenSlots);
-    }
+        try {
+            // Get taken slots from your existing service
+            List<String> takenSlots = visitService.getTakenTimeSlots(propertyId, date);
 
+            // Get current logged-in user's visit time if exists
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            PropertyVisit currentVisit = visitService.getCurrentVisit(propertyId, username);
+            String currentVisitTime = currentVisit != null ?
+                    new SimpleDateFormat("HH:mm").format(currentVisit.getVisitDate()) : null;
+
+            // Generate all time slots with their status
+            List<Map<String, Object>> allSlots = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate selectedDate = LocalDate.parse(date);
+            boolean isToday = selectedDate.equals(LocalDate.now());
+
+            for (int hour = 7; hour <= 21; hour++) {
+                for (String minute : Arrays.asList("00", "30")) {
+                    if (hour == 21 && minute.equals("30")) continue;
+
+                    String time = String.format("%02d:%s", hour, minute);
+                    String label = time;
+                    boolean disabled = false;
+
+                    // Check if slot is in the past
+                    if (isToday) {
+                        LocalTime slotTime = LocalTime.of(hour, Integer.parseInt(minute));
+                        if (slotTime.isBefore(LocalTime.now())) {
+                            label = time + " (Past)";
+                            disabled = true;
+                        }
+                    }
+
+                    // Check if slot is taken
+                    if (takenSlots.contains(time)) {
+                        if (!time.equals(currentVisitTime)) {
+                            label = time + " (Taken)";
+                            disabled = true;
+                        } else {
+                            label = time + " (Current)";
+                        }
+                    }
+
+                    Map<String, Object> slot = new HashMap<>();
+                    slot.put("time", time);
+                    slot.put("label", label);
+                    slot.put("disabled", disabled);
+                    slot.put("isCurrent", time.equals(currentVisitTime));
+
+                    allSlots.add(slot);
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("slots", allSlots);
+            response.put("currentVisitTime", currentVisitTime);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Failed to get time slots: " + e.getMessage()));
+        }
+    }
     // GET: check if user has existing visit for a property
     @GetMapping("/check-existing/{propertyId}")
     public ResponseEntity<Map<String, Boolean>> checkExistingVisit(

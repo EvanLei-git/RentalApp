@@ -33,10 +33,10 @@ public class TenantController {
     private final TenantRepository tenantRepository;
 
     @Autowired
-    public TenantController(TenantService tenantService, 
-                           RentalApplicationRepository rentalApplicationRepository, 
-                           PropertyVisitRepository propertyVisitRepository, 
-                           TenantRepository tenantRepository) {
+    public TenantController(TenantService tenantService,
+                            RentalApplicationRepository rentalApplicationRepository,
+                            PropertyVisitRepository propertyVisitRepository,
+                            TenantRepository tenantRepository) {
         this.tenantService = tenantService;
         this.rentalApplicationRepository = rentalApplicationRepository;
         this.propertyVisitRepository = propertyVisitRepository;
@@ -66,36 +66,34 @@ public class TenantController {
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDashboardData(
             @RequestParam(required = false) String applicationStatuses,
-            @RequestParam(required = false) String visitStatuses,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo) {
+            @RequestParam(required = false) String visitStatuses) {
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
             Optional<Tenant> tenantOpt = tenantRepository.findByUsername(username);
-            
+
             if (tenantOpt.isEmpty()) {
                 return ResponseEntity.badRequest().body("Tenant not found");
             }
-            
+
             Tenant tenant = tenantOpt.get();
 
-            List<String> applicationStatusList = applicationStatuses != null && !applicationStatuses.isEmpty() 
-                    ? Arrays.asList(applicationStatuses.split(",")) 
+            List<String> applicationStatusList = applicationStatuses != null && !applicationStatuses.isEmpty()
+                    ? Arrays.asList(applicationStatuses.split(","))
                     : Collections.emptyList();
 
-            List<String> visitStatusList = visitStatuses != null && !visitStatuses.isEmpty() 
-                    ? Arrays.asList(visitStatuses.split(",")) 
+            List<String> visitStatusList = visitStatuses != null && !visitStatuses.isEmpty()
+                    ? Arrays.asList(visitStatuses.split(","))
                     : Collections.emptyList();
 
             List<RentalApplication> applications = rentalApplicationRepository.findByApplicantUserId(tenant.getUserId());
             List<PropertyVisit> visits = propertyVisitRepository.findByTenant_Username(username);
 
             // Filter applications
-            applications = filterApplications(applications, applicationStatusList, dateFrom, dateTo);
+            applications = filterApplications(applications, applicationStatusList);
             // Filter visits
-            visits = filterVisits(visits, visitStatusList, dateFrom, dateTo);
+            visits = filterVisits(visits, visitStatusList);
 
             Map<String, Object> response = new HashMap<>();
             response.put("applications", applications);
@@ -109,51 +107,25 @@ public class TenantController {
     }
 
     private List<RentalApplication> filterApplications(List<RentalApplication> applications,
-                                                   List<String> statuses,
-                                                   LocalDate dateFrom,
-                                                   LocalDate dateTo) {
+                                                       List<String> statuses) {
         return applications.stream()
                 .filter(app -> statuses == null || statuses.isEmpty() ||
                         statuses.contains(app.getStatus().toString()))
-                .filter(app -> dateFrom == null ||
-                        app.getApplicationDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isEqual(dateFrom) ||
-                        !app.getApplicationDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isBefore(dateFrom))
-                .filter(app -> dateTo == null ||
-                        app.getApplicationDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isEqual(dateTo) ||
-                        !app.getApplicationDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isAfter(dateTo))
                 .collect(Collectors.toList());
     }
 
     private List<PropertyVisit> filterVisits(List<PropertyVisit> visits,
-                                           List<String> statuses,
-                                           LocalDate dateFrom,
-                                           LocalDate dateTo) {
+                                             List<String> statuses) {
         return visits.stream()
                 .filter(visit -> statuses == null || statuses.isEmpty() ||
                         statuses.contains(visit.getVisitStatus().toString()))
-                .filter(visit -> dateFrom == null ||
-                        visit.getVisitDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isEqual(dateFrom) ||
-                        !visit.getVisitDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isBefore(dateFrom))
-                .filter(visit -> dateTo == null ||
-                        visit.getVisitDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isEqual(dateTo) ||
-                        !visit.getVisitDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                                .isAfter(dateTo))
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/applications")
     public ResponseEntity<?> getApplications(
             Authentication authentication,
-            @RequestParam(required = false) String applicationStatuses,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo) {
+            @RequestParam(required = false) String applicationStatuses) {
         try {
             String username = authentication.getName();
             Optional<Tenant> tenantOpt = tenantRepository.findByUsername(username);
@@ -164,10 +136,8 @@ public class TenantController {
 
             Tenant tenant = tenantOpt.get();
             List<RentalApplication> applications = rentalApplicationRepository.findByApplicantUserId(tenant.getUserId());
-            applications = filterApplications(applications, 
-                                           applicationStatuses != null ? Arrays.asList(applicationStatuses.split(",")) : null, 
-                                           dateFrom, 
-                                           dateTo);
+            applications = filterApplications(applications,
+                    applicationStatuses != null ? Arrays.asList(applicationStatuses.split(",")) : null);
             applications.sort((a1, a2) -> a2.getApplicationDate().compareTo(a1.getApplicationDate()));
 
             return ResponseEntity.ok(Map.of("applications", applications));
@@ -179,9 +149,7 @@ public class TenantController {
     @GetMapping("/visits")
     public ResponseEntity<?> getVisits(
             Authentication authentication,
-            @RequestParam(required = false) String visitStatuses,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo) {
+            @RequestParam(required = false) String visitStatuses) {
         try {
             String username = authentication.getName();
             Optional<Tenant> tenantOpt = tenantRepository.findByUsername(username);
@@ -192,10 +160,8 @@ public class TenantController {
 
             Tenant tenant = tenantOpt.get();
             List<PropertyVisit> visits = propertyVisitRepository.findByTenant_Username(username);
-            visits = filterVisits(visits, 
-                                visitStatuses != null ? Arrays.asList(visitStatuses.split(",")) : null, 
-                                dateFrom, 
-                                dateTo);
+            visits = filterVisits(visits,
+                    visitStatuses != null ? Arrays.asList(visitStatuses.split(",")) : null);
             visits.sort((v1, v2) -> v2.getVisitDate().compareTo(v1.getVisitDate()));
 
             return ResponseEntity.ok(Map.of("visits", visits));

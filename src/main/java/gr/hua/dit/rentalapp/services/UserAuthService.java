@@ -37,8 +37,6 @@ public class UserAuthService implements UserDetailsService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PostgresLargeObjectService largeObjectService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -98,14 +96,14 @@ public class UserAuthService implements UserDetailsService {
         // Filter by username if provided
         if (usernameFilter != null && !usernameFilter.isEmpty()) {
             filteredStream = filteredStream.filter(user ->
-                user.getUsername().toLowerCase().startsWith(usernameFilter.toLowerCase()));
+                    user.getUsername().toLowerCase().startsWith(usernameFilter.toLowerCase()));
         }
 
         // Filter by role if provided
         if (roleFilter != null && !roleFilter.isEmpty()) {
             filteredStream = filteredStream.filter(user ->
-                user.getRoles().stream()
-                    .anyMatch(role -> role.getName().name().equalsIgnoreCase(roleFilter)));
+                    user.getRoles().stream()
+                            .anyMatch(role -> role.getName().name().equalsIgnoreCase(roleFilter)));
         }
 
         // Filter by verification status if provided
@@ -151,9 +149,8 @@ public class UserAuthService implements UserDetailsService {
 
     @Transactional
     public User register(String username, String password, String email,
-                        String firstName, String lastName, String role,
-                        Double monthlyIncome, String employmentStatus,
-                        MultipartFile idFrontImage, MultipartFile idBackImage) throws Exception {
+                         String firstName, String lastName, String role,
+                         Double monthlyIncome, String employmentStatus) throws Exception {
 
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("Username already exists");
@@ -167,20 +164,6 @@ public class UserAuthService implements UserDetailsService {
             Tenant tenant = new Tenant();
             tenant.setMonthlyIncome(monthlyIncome);
             tenant.setEmploymentStatus(employmentStatus);
-
-            try {
-                if (idFrontImage != null && !idFrontImage.isEmpty()) {
-                    Long frontImageOid = largeObjectService.saveImage(idFrontImage.getBytes());
-                    tenant.setIdFrontImageOid(frontImageOid);
-                }
-
-                if (idBackImage != null && !idBackImage.isEmpty()) {
-                    Long backImageOid = largeObjectService.saveImage(idBackImage.getBytes());
-                    tenant.setIdBackImageOid(backImageOid);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to save ID images: " + e.getMessage());
-            }
             user = tenant;
         } else if ("landlord".equalsIgnoreCase(role)) {
             roleType = RoleType.LANDLORD;
@@ -230,7 +213,7 @@ public class UserAuthService implements UserDetailsService {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-            
+
             // Check if user is not an administrator
             boolean isAdmin = user.getRoles().stream()
                     .anyMatch(role -> role.getName().name().equals("ADMINISTRATOR"));
@@ -248,52 +231,52 @@ public class UserAuthService implements UserDetailsService {
                 entityManager.createQuery("DELETE FROM RentalApplication ra WHERE ra.applicant.userId = :userId")
                         .setParameter("userId", userId)
                         .executeUpdate();
-                
+
                 // Delete tenant's visits
                 entityManager.createQuery("DELETE FROM PropertyVisit pv WHERE pv.tenant.userId = :userId")
                         .setParameter("userId", userId)
                         .executeUpdate();
             }
-            
+
             // If the user is a landlord, handle their properties
             if (user instanceof Landlord) {
                 // Get all properties owned by this landlord
                 List<Long> propertyIds = entityManager.createQuery(
-                        "SELECT p.propertyId FROM Property p WHERE p.owner.userId = :userId", Long.class)
+                                "SELECT p.propertyId FROM Property p WHERE p.owner.userId = :userId", Long.class)
                         .setParameter("userId", userId)
                         .getResultList();
-                
+
                 // Delete all rental applications for these properties
                 if (!propertyIds.isEmpty()) {
                     entityManager.createQuery(
-                            "DELETE FROM RentalApplication ra WHERE ra.property.propertyId IN :propertyIds")
+                                    "DELETE FROM RentalApplication ra WHERE ra.property.propertyId IN :propertyIds")
                             .setParameter("propertyIds", propertyIds)
                             .executeUpdate();
-                    
+
                     // Delete all visits for these properties
                     entityManager.createQuery(
-                            "DELETE FROM PropertyVisit pv WHERE pv.property.propertyId IN :propertyIds")
+                                    "DELETE FROM PropertyVisit pv WHERE pv.property.propertyId IN :propertyIds")
                             .setParameter("propertyIds", propertyIds)
                             .executeUpdate();
                 }
-                
+
                 // Now delete the properties
                 entityManager.createQuery("DELETE FROM Property p WHERE p.owner.userId = :userId")
                         .setParameter("userId", userId)
                         .executeUpdate();
             }
-            
+
             // Clear the user's roles
             user.getRoles().clear();
             userRepository.save(user);
-            
+
             // Flush changes before final deletion
             entityManager.flush();
             entityManager.clear();
-            
+
             // Now delete the user
             userRepository.delete(user);
-            
+
         } catch (Exception e) {
             throw new RuntimeException("Error deleting user: " + e.getMessage());
         }
@@ -322,31 +305,6 @@ public class UserAuthService implements UserDetailsService {
             Tenant tenant = (Tenant) user;
             details.put("monthlyIncome", tenant.getMonthlyIncome());
             details.put("employmentStatus", tenant.getEmploymentStatus());
-
-            // Get ID photos
-            if (tenant.getIdFrontImageOid() != null) {
-                try {
-                    byte[] frontPhotoData = largeObjectService.getImage(tenant.getIdFrontImageOid());
-                    if (frontPhotoData != null) {
-                        details.put("idPhotoFront", Base64.getEncoder().encodeToString(frontPhotoData));
-                    }
-                } catch (Exception e) {
-                    // Log error but continue
-                    System.err.println("Error fetching front ID photo: " + e.getMessage());
-                }
-            }
-
-            if (tenant.getIdBackImageOid() != null) {
-                try {
-                    byte[] backPhotoData = largeObjectService.getImage(tenant.getIdBackImageOid());
-                    if (backPhotoData != null) {
-                        details.put("idPhotoBack", Base64.getEncoder().encodeToString(backPhotoData));
-                    }
-                } catch (Exception e) {
-                    // Log error but continue
-                    System.err.println("Error fetching back ID photo: " + e.getMessage());
-                }
-            }
         }
 
         // Get user roles
@@ -371,7 +329,7 @@ public class UserAuthService implements UserDetailsService {
         // Check if the current user has admin role
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(role -> role.getName().name().equals("ADMINISTRATOR"));
-        
+
         if (!isAdmin) {
             throw new RuntimeException("Only administrators can verify users");
         }
@@ -395,8 +353,10 @@ public class UserAuthService implements UserDetailsService {
 
         if (user instanceof Landlord) {
             ((Landlord) user).setVerifiedBy(admin);
+            ((Landlord) user).setVerified(true);
         } else if (user instanceof Tenant) {
             ((Tenant) user).setVerifiedBy(admin);
+            ((Tenant) user).setVerified(true);
         } else {
             throw new RuntimeException("Only Landlords and Tenants can be verified");
         }

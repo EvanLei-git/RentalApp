@@ -8,6 +8,7 @@ import gr.hua.dit.rentalapp.entities.Landlord;
 import gr.hua.dit.rentalapp.enums.RoleType;
 import gr.hua.dit.rentalapp.services.PropertyService;
 import gr.hua.dit.rentalapp.services.PropertyVisitService;
+import gr.hua.dit.rentalapp.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +31,13 @@ public class PropertyController {
 
     private final PropertyService propertyService;
     private final PropertyVisitService propertyVisitService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public PropertyController(PropertyService propertyService, PropertyVisitService propertyVisitService) {
+    public PropertyController(PropertyService propertyService, PropertyVisitService propertyVisitService, UserRepository userRepository) {
         this.propertyService = propertyService;
         this.propertyVisitService = propertyVisitService;
+        this.userRepository = userRepository;
     }
 
     // GET single property
@@ -55,32 +58,72 @@ public class PropertyController {
     // POST: create a new property (Landlord usage)
     @PostMapping("/create")
     @ResponseBody
-    public ResponseEntity<String> createProperty(@RequestBody Property property, Principal principal) {
-        // Get the currently logged in user
-        User user = (User) ((Authentication) principal).getPrincipal();
-        
-        // Check if user is null
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not authenticated");
+    public ResponseEntity<String> createProperty(@RequestBody Property property, Authentication authentication) {
+        try {
+            // Get the username from the authentication object
+            String username = authentication.getName();
+            
+            // Use the service to find the actual User entity
+            Optional<User> userOptional = userRepository.findByUsername(username);
+            if (!userOptional.isPresent()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not found");
+            }
+            
+            User user = userOptional.get();
+            
+            // Check if user has LANDLORD role
+            boolean isLandlord = user.getRoles().stream()
+                    .anyMatch(role -> role.getName() == RoleType.LANDLORD);
+                    
+            if (!isLandlord) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only landlords can create properties");
+            }
+            
+            // Set the owner for the property
+            property.setOwner((Landlord) user);
+            
+            // Validate required fields
+            if (property.getAddress() == null || property.getAddress().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Address is required");
+            }
+            if (property.getCity() == null || property.getCity().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("City is required");
+            }
+            if (property.getCountry() == null || property.getCountry().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Country is required");
+            }
+            if (property.getPostalCode() == null || property.getPostalCode().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Postal code is required");
+            }
+            if (property.getType() == null) {
+                return ResponseEntity.badRequest().body("Property type is required");
+            }
+            if (property.getRentAmount() <= 0) {
+                return ResponseEntity.badRequest().body("Rent amount must be greater than 0");
+            }
+            if (property.getSizeInSquareMeters() <= 0) {
+                return ResponseEntity.badRequest().body("Size must be greater than 0");
+            }
+            if (property.getBedrooms() < 0) {
+                return ResponseEntity.badRequest().body("Number of bedrooms cannot be negative");
+            }
+            if (property.getBathrooms() < 0) {
+                return ResponseEntity.badRequest().body("Number of bathrooms cannot be negative");
+            }
+            
+            // Set default values
+            property.setCreationDate(new Date());
+            property.setRented(false);
+            property.setApproved(false);
+            
+            // Save the property
+            propertyService.createProperty(property);
+            return ResponseEntity.ok("Property created successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to create property: " + e.getMessage());
         }
-        
-        // Check if user has LANDLORD role
-        boolean isLandlord = user.getRoles().stream()
-                .anyMatch(role -> role.getName() == RoleType.LANDLORD);
-                
-        if (!isLandlord) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only landlords can create properties");
-        }
-        
-        // Check if user is instance of Landlord
-        if (!(user instanceof Landlord)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User has landlord role but is not a Landlord instance");
-        }
-        
-        // Set the owner before saving
-        property.setOwner((Landlord) user);
-        propertyService.createProperty(property);
-        return ResponseEntity.ok("Property created successfully!");
     }
 
     // PUT: update property details
@@ -253,6 +296,43 @@ public class PropertyController {
         return mav;
     }
     
+    // GET: get landlord's properties
+    @GetMapping("/landlord-properties")
+    @ResponseBody
+    public ResponseEntity<List<Property>> getLandlordProperties(Principal principal) {
+        try {
+            // Get the currently logged in user
+            User user = (User) ((Authentication) principal).getPrincipal();
+            
+            // Check if user is null
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            }
+            
+            // Check if user has LANDLORD role
+            boolean isLandlord = user.getRoles().stream()
+                    .anyMatch(role -> role.getName() == RoleType.LANDLORD);
+                    
+            if (!isLandlord) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            }
+            
+            // Check if user is instance of Landlord
+            if (!(user instanceof Landlord)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
+            
+            // Get properties for this landlord
+            Landlord landlord = (Landlord) user;
+            List<Property> properties = propertyService.getPropertiesByLandlord(landlord);
+            
+            return ResponseEntity.ok(properties);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     // API Endpoints for property management
     @GetMapping("/api/landlords/properties/{propertyId}")
     public ResponseEntity<Property> getPropertyByIdApi(@PathVariable Long propertyId) {

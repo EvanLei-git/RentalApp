@@ -2,7 +2,6 @@ package gr.hua.dit.rentalapp.controllers;
 
 import gr.hua.dit.rentalapp.entities.Administrator;
 import gr.hua.dit.rentalapp.entities.Property;
-import gr.hua.dit.rentalapp.entities.User;
 import gr.hua.dit.rentalapp.services.AdministratorService;
 import gr.hua.dit.rentalapp.services.PropertyService;
 import gr.hua.dit.rentalapp.services.UserAuthService;
@@ -132,7 +131,6 @@ public class AdministratorController {
                     .collect(Collectors.toList());
             }
             
-            // Convert properties to DTOs
             List<Map<String, Object>> propertyDTOs = properties.stream()
                 .map(property -> {
                     Map<String, Object> dto = new HashMap<>();

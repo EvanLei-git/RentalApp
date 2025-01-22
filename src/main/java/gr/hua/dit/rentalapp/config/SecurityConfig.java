@@ -1,7 +1,6 @@
 package gr.hua.dit.rentalapp.config;
 
-import gr.hua.dit.rentalapp.services.UserAuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,18 +8,13 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
-import org.thymeleaf.spring6.SpringTemplateEngine;
-import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
-import org.thymeleaf.spring6.view.ThymeleafViewResolver;
+
 
 import java.util.Arrays;
 
@@ -28,12 +22,6 @@ import java.util.Arrays;
 @EnableWebSecurity
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig implements WebMvcConfigurer {
-
-    @Autowired
-    private UserAuthService userAuthService;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
@@ -47,11 +35,12 @@ public class SecurityConfig implements WebMvcConfigurer {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/", "/home", "/login", "/register").permitAll()
+                .requestMatchers("/", "/home", "/login", "/register", "/error").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/templates/**").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/templates/**", "/favicon.ico").permitAll()
                 .requestMatchers("/property/homeData", "/property/filter").permitAll()
                 .requestMatchers("/property/**").permitAll()
+                .requestMatchers("/api/visits/**").permitAll()
                 // Role-based access control
                 .requestMatchers("/api/tenant/**").hasRole("TENANT")
                 .requestMatchers("/api/landlord/**").hasRole("LANDLORD")
@@ -68,7 +57,7 @@ public class SecurityConfig implements WebMvcConfigurer {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/api/auth/login")
-                .defaultSuccessUrl("/dashboard", true)
+                .defaultSuccessUrl("/", false)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
@@ -78,10 +67,6 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
                 .permitAll()
-            )
-            .rememberMe(remember -> remember
-                .key("uniqueAndSecretKey")
-                .tokenValiditySeconds(86400) // 24 hours
             );
 
         return http.build();
@@ -95,47 +80,21 @@ public class SecurityConfig implements WebMvcConfigurer {
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
-    // Thymeleaf Configuration
-    @Bean
-    public SpringResourceTemplateResolver templateResolver() {
-        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
-        templateResolver.setPrefix("classpath:/templates/");
-        templateResolver.setSuffix(".html");
-        templateResolver.setTemplateMode("HTML");
-        templateResolver.setCacheable(false);
-        return templateResolver;
-    }
-
-    @Bean
-    public SpringSecurityDialect securityDialect() {
-        return new SpringSecurityDialect();
-    }
-
-    @Bean
-    public SpringTemplateEngine templateEngine() {
-        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.setTemplateResolver(templateResolver());
-        templateEngine.setEnableSpringELCompiler(true);
-        templateEngine.addDialect(securityDialect()); 
-        return templateEngine;
-    }
-
-    @Bean
-    public ThymeleafViewResolver viewResolver() {
-        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
-        viewResolver.setTemplateEngine(templateEngine());
-        viewResolver.setCharacterEncoding("UTF-8");
-        return viewResolver;
-    }
-
     @Override
-    public void configureViewResolvers(ViewResolverRegistry registry) {
-        registry.viewResolver(viewResolver());
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Configure resource handlers with cache control
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/")
+                .setCachePeriod(3600); // Cache for 1 hour
+
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("classpath:/static/images/")
+                .setCachePeriod(3600); // Cache for 1 hour
     }
 }

@@ -1,6 +1,7 @@
 package gr.hua.dit.rentalapp.services;
 
 import gr.hua.dit.rentalapp.entities.Property;
+import gr.hua.dit.rentalapp.entities.Landlord;
 import gr.hua.dit.rentalapp.repositories.PropertyRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -24,7 +25,7 @@ public class PropertyService {
 
     public List<Property> getAllProperties() {
         try {
-            List<Property> properties = propertyRepository.findAllWithOwners();
+            List<Property> properties = propertyRepository.findAll();
             return properties;
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,20 +70,32 @@ public class PropertyService {
         propertyRepository.save(existing);
     }
 
+    public List<Property> getPropertiesByLandlord(Landlord landlord) {
+        try {
+            return propertyRepository.findByOwner(landlord);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error fetching landlord properties: " + e.getMessage());
+        }
+    }
+
     @Transactional
     public void deleteProperty(Long propertyId) {
         try {
-            // Delete associated rental applications first
-            entityManager.createQuery("DELETE FROM RentalApplication ra WHERE ra.property.propertyId = :propertyId")
+            // First delete related visits
+            entityManager.createQuery("DELETE FROM PropertyVisit v WHERE v.property.id = :propertyId")
                     .setParameter("propertyId", propertyId)
                     .executeUpdate();
             
-            // Now delete the property
-            Property property = propertyRepository.findById(propertyId)
-                    .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
+            // Then delete related applications
+            entityManager.createQuery("DELETE FROM RentalApplication a WHERE a.property.id = :propertyId")
+                    .setParameter("propertyId", propertyId)
+                    .executeUpdate();
             
-            propertyRepository.delete(property);
+            // Finally delete the property
+            propertyRepository.deleteById(propertyId);
             
+            entityManager.flush();
         } catch (Exception e) {
             throw new RuntimeException("Error deleting property: " + e.getMessage());
         }

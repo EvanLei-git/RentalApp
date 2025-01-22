@@ -12,7 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -97,10 +99,24 @@ public class DataInitializer implements CommandLineRunner {
                 createRentalApplication(property2, tenant1, ApplicationStatus.REJECTED);
 
                 // Create test property visits
-                createPropertyVisit(property1, tenant1, landlord1, Date.from(Instant.now().plus(2, ChronoUnit.DAYS)), VisitStatus.SCHEDULED);
-                createPropertyVisit(property1, tenant2, landlord1, Date.from(Instant.now().plus(3, ChronoUnit.DAYS)), VisitStatus.COMPLETED);
-                createPropertyVisit(property2, tenant1, landlord1, Date.from(Instant.now().plus(1, ChronoUnit.DAYS)), VisitStatus.CANCELED);
-                createPropertyVisit(property2, tenant2, landlord1, Date.from(Instant.now().plus(4, ChronoUnit.DAYS)), VisitStatus.REQUESTED);
+                LocalDateTime today = LocalDate.now().atTime(9, 0); // Start with 9 AM today
+                LocalDateTime yesterday = LocalDate.now().minusDays(1).atTime(14, 30); // 2:30 PM yesterday
+
+                createPropertyVisit(property1, tenant1, landlord1,
+                        Date.from(today.plusHours(2).atZone(ZoneId.systemDefault()).toInstant()), // 11:00 AM today
+                        VisitStatus.SCHEDULED);
+
+                createPropertyVisit(property1, tenant2, landlord1,
+                        Date.from(yesterday.plusHours(3).atZone(ZoneId.systemDefault()).toInstant()), // 5:30 PM yesterday
+                        VisitStatus.COMPLETED);
+
+                createPropertyVisit(property2, tenant1, landlord1,
+                        Date.from(today.plusHours(6).atZone(ZoneId.systemDefault()).toInstant()), // 3:00 PM today
+                        VisitStatus.CANCELED);
+
+                createPropertyVisit(property2, tenant2, landlord1,
+                        Date.from(today.plusHours(8).atZone(ZoneId.systemDefault()).toInstant()), // 5:00 PM today
+                        VisitStatus.REQUESTED);
 
                 // Create some test reports
                 Report report1 = new Report();
@@ -210,13 +226,10 @@ public class DataInitializer implements CommandLineRunner {
         property.setDescription(description);
         property.setRented(isRented);
         property.setApproved(isApproved);
-        
-        // Generate a random date between 6 months ago and today
-        Instant now = Instant.now();
-        Instant sixMonthsAgo = now.minus(180, ChronoUnit.DAYS);
-        long randomDate = new Random().nextLong(sixMonthsAgo.toEpochMilli(), now.toEpochMilli());
-        property.setCreationDate(new Date(randomDate));
-        
+
+        LocalDateTime yesterday = LocalDate.now().minusDays(1).atTime(10, 0);
+        property.setCreationDate(Date.from(yesterday.atZone(ZoneId.systemDefault()).toInstant()));
+
         return propertyRepository.save(property);
     }
 

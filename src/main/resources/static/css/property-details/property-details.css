@@ -1,3 +1,88 @@
+.status-icon {
+    margin-left: 5px;
+    cursor: help;
+}
+
+.status-icon.pending {
+    color: #6c757d;
+}
+
+.status-icon.not-verified {
+    color: #dc3545;
+}
+
+.status-icon.verified {
+    color: #28a745;
+}
+
+.verification-popup {
+    text-align: left;
+    padding: 20px;
+}
+.general-details i {
+    color: #2a5298;
+}
+
+.verification-popup .title {
+    color: #2c3e50;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.verification-popup .requirements {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.verification-popup .requirements ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.verification-popup .requirements li {
+    padding: 8px 0;
+    display: flex;
+    align-items: center;
+}
+
+.verification-popup .requirements i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.verification-popup .note {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+    margin-top: 15px;
+}
+
+.rental-confirmation {
+    text-align: center;
+    padding: 20px;
+}
+
+.rental-confirmation .title {
+    color: #2c3e50;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+}
+
+.rental-confirmation .update-employment {
+    background: #f8f9fa;
+    border: 2px solid #28a745;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    cursor: pointer;
+}
+
 .property-details {
     padding: 40px 0;
     margin-top: 56px;
@@ -11,12 +96,6 @@
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     background: white;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.property-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
 }
 
 .property-header {
@@ -54,7 +133,6 @@
     min-width: 180px;
     padding: 12px 30px;
     font-weight: 600;
-    transition: opacity 0.2s;
     border: none;
 }
 
@@ -69,7 +147,6 @@
 }
 
 .schedule-btn:hover, .rent-btn:hover {
-    opacity: 0.9;
     color: white;
 }
 
@@ -78,12 +155,6 @@
     padding: 1.5rem;
     border-radius: 10px;
     margin-bottom: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease;
-}
-
-.property-info:hover {
-    transform: translateY(-2px);
 }
 
 .property-info h4 {
@@ -93,6 +164,8 @@
 }
 
 .property-info p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     margin-bottom: 0.8rem;
     font-size: 1.1rem;
 }
@@ -135,18 +208,18 @@
     overflow-y: auto;
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 992px) {
     .property-header {
         flex-direction: column;
         gap: 1rem;
         text-align: center;
     }
-    
+
     .action-buttons {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .schedule-btn, .rent-btn {
         width: 100%;
     }

@@ -1,0 +1,84 @@
+.dashboard-items {
+    padding: 20px;
+}
+
+.dashboard-item {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dashboard-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.status-badge {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.property-details {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.alert {
+    margin: 20px 0;
+    border-radius: 8px;
+}
+
+.filter-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.filter-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.filter-section {
+    margin-bottom: 20px;
+}
+
+.filter-title {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.form-check {
+    margin-bottom: 8px;
+}
+
+.status-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-label i {
+    width: 16px;
+    text-align: center;
+}
+
+/* Status colors */
+.status-label.pending i { color: #f59e0b; }
+.status-label.approved i { color: #10b981; }
+.status-label.rejected i { color: #ef4444; }
+.status-label.requested i { color: #3b82f6; }
+.status-label.scheduled i { color: #6366f1; }
+.status-label.canceled i { color: #6b7280; }
+.status-label.completed i { color: #10b981; }
+.status-label.declined i { color: #ef4444; }

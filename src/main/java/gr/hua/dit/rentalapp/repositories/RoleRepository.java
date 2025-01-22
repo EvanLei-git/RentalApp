@@ -13,13 +13,4 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
 
     Optional<Role> findByName(RoleType roleName);
 
-    default Role updateOrInsert(Role role) {
-        Optional<Role> existingRole = findByName(role.getName());
-        if (existingRole.isPresent()) {
-            return existingRole.get();
-        }
-        else {
-            return save(role);
-        }
-    }
 }
