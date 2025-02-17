@@ -1,4 +1,4 @@
-# Rental Application @EvanLei-git @TriantisTheo @steliosorfa
+# <img src="https://github.com/user-attachments/assets/0aca3372-7dd4-48e9-b45d-5719d6e72566" width="50px">  Rental Application POC
 
 A Spring Boot application for managing rental properties.
 
@@ -126,4 +126,6 @@ spring.jpa.properties.hibernate.connection.provider_disables_autocommit=true
 # Large Object settings
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 ```
+## Authors
 
+ @EvanLei-git @TriantisTheo @steliosorfa
